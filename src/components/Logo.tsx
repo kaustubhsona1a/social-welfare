@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, RefreshCw } from 'lucide-react';
+import { FoundationRepository } from '../lib/supabase';
 
 interface LogoProps {
   className?: string;
@@ -45,7 +46,7 @@ export const Logo: React.FC<LogoProps> = ({
     };
   }, []);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -53,25 +54,19 @@ export const Logo: React.FC<LogoProps> = ({
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) {
-          localStorage.setItem('custom_app_logo', result);
-          setCustomLogo(result);
-          window.dispatchEvent(new Event('logo_updated'));
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const imageUrl = await FoundationRepository.uploadImage(file, 'logos');
+        await FoundationRepository.saveCustomLogo(imageUrl);
+      } catch (err: any) {
+        console.error('Logo upload error:', err);
+      }
     }
   };
 
-  const handleResetLogo = (e: React.MouseEvent) => {
+  const handleResetLogo = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm('Reset logo back to default official emblem?')) {
-      localStorage.removeItem('custom_app_logo');
-      setCustomLogo(null);
-      window.dispatchEvent(new Event('logo_updated'));
+      await FoundationRepository.saveCustomLogo('');
     }
   };
 

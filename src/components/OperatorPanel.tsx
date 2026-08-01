@@ -15,7 +15,8 @@ import {
   ArrowLeft,
   Sparkles,
   Database,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw
 } from 'lucide-react';
 import { FoundationRepository, isSupabaseConfigured, SUPABASE_SQL_SCHEMA } from '../lib/supabase';
 import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest } from '../types';
@@ -59,10 +60,12 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [newDriveCategory, setNewDriveCategory] = useState<'ration' | 'cloth' | 'medical' | 'flood'>('ration');
   const [driveImagePreview, setDriveImagePreview] = useState<string | null>(null);
 
-  // --- GALLERY STATE ---
+  // --- GALLERY MULTIPLE UPLOAD STATE ---
   const [newGalleryTitle, setNewGalleryTitle] = useState('');
   const [newGalleryCategory, setNewGalleryCategory] = useState<GalleryItem['category']>('relief');
-  const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
+  const [selectedGalleryFiles, setSelectedGalleryFiles] = useState<File[]>([]);
+  const [galleryFilePreviews, setGalleryFilePreviews] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
   // File Refs
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -177,15 +180,34 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   };
 
   // ----------------------------------------------------
-  // DRIVE EDIT / ADD
+  // DRIVE EDIT / ADD / PHOTO UPLOAD
   // ----------------------------------------------------
+  const handleStartEditDrive = (drive: DonationDrive) => {
+    setEditingDriveId(drive.id);
+    setEditDriveData(drive);
+  };
+
   const handleSaveDriveEdit = async () => {
     if (!editingDriveId) return;
     setUploading(true);
     await FoundationRepository.saveDrive(editDriveData as DonationDrive);
     setUploading(false);
     setEditingDriveId(null);
-    notify('Drive updated!');
+    notify('Drive updated successfully!');
+  };
+
+  const handleDrivePhotoUpload = async (drive: DonationDrive, file: File) => {
+    setUploading(true);
+    try {
+      const url = await FoundationRepository.uploadImage(file, 'drives');
+      const updated = { ...drive, imageUrl: url };
+      await FoundationRepository.saveDrive(updated);
+      notify(`Updated cover photo for "${drive.titleEn}"`);
+    } catch (err: any) {
+      alert(`Drive photo upload failed: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDeleteDrive = async (id: string, title: string) => {
@@ -233,32 +255,66 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   };
 
   // ----------------------------------------------------
-  // GALLERY ADD
+  // GALLERY MULTIPLE PHOTO UPLOAD
   // ----------------------------------------------------
-  const handleAddGalleryItem = async (e: React.FormEvent) => {
+  const handleGalleryFilesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files: File[] = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setSelectedGalleryFiles(prev => [...prev, ...files]);
+    const newPreviews = files.map((file: File) => URL.createObjectURL(file));
+    setGalleryFilePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveGalleryPreview = (index: number) => {
+    setSelectedGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    setGalleryFilePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleBatchGalleryUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!galleryImagePreview) {
-      alert('Please select an image file to upload.');
+    if (selectedGalleryFiles.length === 0) {
+      alert('Please select at least one photo to upload.');
       return;
     }
 
-    const newItem: GalleryItem = {
-      id: 'gal-' + Date.now(),
-      titleEn: newGalleryTitle || 'Community Activity',
-      titleOr: newGalleryTitle || 'ସାମାଜିକ ସେବା କାର୍ଯ୍ୟ',
-      category: newGalleryCategory,
-      imageUrl: galleryImagePreview,
-      date: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
-      location: 'Babujang, Cuttack'
-    };
-
     setUploading(true);
-    await FoundationRepository.saveGalleryItem(newItem);
-    setUploading(false);
+    const total = selectedGalleryFiles.length;
 
-    setNewGalleryTitle('');
-    setGalleryImagePreview(null);
-    notify('Uploaded gallery image!');
+    try {
+      for (let i = 0; i < total; i++) {
+        const file = selectedGalleryFiles[i];
+        setUploadProgress(`Uploading photo ${i + 1} of ${total}...`);
+        
+        const imageUrl = await FoundationRepository.uploadImage(file, 'gallery');
+        const itemTitle = newGalleryTitle.trim()
+          ? (total > 1 ? `${newGalleryTitle.trim()} #${i + 1}` : newGalleryTitle.trim())
+          : 'Community Relief Activity';
+
+        const newItem: GalleryItem = {
+          id: `gal-${Date.now()}-${i}`,
+          titleEn: itemTitle,
+          titleOr: itemTitle,
+          category: newGalleryCategory,
+          imageUrl,
+          date: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
+          location: 'Babujang, Cuttack'
+        };
+
+        await FoundationRepository.saveGalleryItem(newItem);
+      }
+
+      notify(`Successfully uploaded ${total} photo${total > 1 ? 's' : ''} to Gallery!`);
+      setSelectedGalleryFiles([]);
+      setGalleryFilePreviews([]);
+      setNewGalleryTitle('');
+    } catch (err: any) {
+      alert(`Gallery upload error: ${err?.message || 'Failed to upload'}`);
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+    }
   };
 
   const handleDeleteGallery = async (id: string) => {
@@ -686,6 +742,13 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                     </div>
                   </div>
 
+                  {driveImagePreview && (
+                    <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                      <img src={driveImagePreview} alt="Drive Cover Preview" className="w-16 h-12 rounded object-cover border" />
+                      <span className="text-xs text-emerald-700 font-medium">Cover Photo Uploaded ✓</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-2">
                       <input
@@ -706,9 +769,10 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => drivePhotoInputRef.current?.click()}
-                        className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs rounded-lg border font-medium"
+                        className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs rounded-lg border font-medium flex items-center gap-1.5"
                       >
-                        {driveImagePreview ? 'Photo Uploaded ✓' : 'Upload Cover Photo'}
+                        <Camera className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{driveImagePreview ? 'Change Cover Photo' : 'Upload Cover Photo'}</span>
                       </button>
                     </div>
 
@@ -725,26 +789,159 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
 
               {/* Drives List */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {drives.map(drive => (
-                  <div key={drive.id} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img src={drive.imageUrl} alt={drive.titleEn} className="w-12 h-12 rounded-lg object-cover shrink-0" />
-                      <div className="min-w-0">
-                        <h5 className="font-semibold text-slate-900 text-xs truncate">{drive.titleEn}</h5>
-                        <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                          ₹{drive.raisedAmount.toLocaleString()} / ₹{drive.targetAmount.toLocaleString()}
-                        </p>
+                {drives.map(drive => {
+                  const isEditing = editingDriveId === drive.id;
+
+                  if (isEditing) {
+                    return (
+                      <div key={drive.id} className="bg-white p-4 rounded-xl border border-emerald-400 shadow-md space-y-3 sm:col-span-2">
+                        <div className="flex items-center justify-between border-b pb-2">
+                          <span className="text-xs font-bold text-slate-800">Edit Relief Drive</span>
+                          <button onClick={() => setEditingDriveId(null)} className="text-slate-400 hover:text-slate-600">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Title (English)</label>
+                            <input
+                              type="text"
+                              value={editDriveData.titleEn || ''}
+                              onChange={e => setEditDriveData({ ...editDriveData, titleEn: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Title (Odia)</label>
+                            <input
+                              type="text"
+                              value={editDriveData.titleOr || ''}
+                              onChange={e => setEditDriveData({ ...editDriveData, titleOr: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Target Amount (₹)</label>
+                            <input
+                              type="number"
+                              value={editDriveData.targetAmount || 0}
+                              onChange={e => setEditDriveData({ ...editDriveData, targetAmount: Number(e.target.value) })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Raised Amount (₹)</label>
+                            <input
+                              type="number"
+                              value={editDriveData.raisedAmount || 0}
+                              onChange={e => setEditDriveData({ ...editDriveData, raisedAmount: Number(e.target.value) })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <label className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer inline-flex items-center gap-1.5">
+                            <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Upload New Cover Photo</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setUploading(true);
+                                  const url = await FoundationRepository.uploadImage(file, 'drives');
+                                  setEditDriveData({ ...editDriveData, imageUrl: url });
+                                  setUploading(false);
+                                  notify('Cover photo updated for draft!');
+                                }
+                              }}
+                            />
+                          </label>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingDriveId(null)}
+                              className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSaveDriveEdit}
+                              className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold"
+                            >
+                              Save Drive Changes
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={drive.id} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Direct Cover Photo Upload Button on Drive Card */}
+                        <div className="relative group shrink-0" title="Click or hover to change drive cover photo">
+                          <img src={drive.imageUrl} alt={drive.titleEn} className="w-14 h-14 rounded-lg object-cover" />
+                          <label className="absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                            <Camera className="w-4 h-4 text-white" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleDrivePhotoUpload(drive, file);
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        <div className="min-w-0">
+                          <h5 className="font-semibold text-slate-900 text-xs truncate">{drive.titleEn}</h5>
+                          <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                            ₹{drive.raisedAmount.toLocaleString()} / ₹{drive.targetAmount.toLocaleString()}
+                          </p>
+                          <label className="inline-block text-[10px] text-emerald-700 hover:underline cursor-pointer mt-1 font-medium">
+                            + Change Photo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleDrivePhotoUpload(drive, file);
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleStartEditDrive(drive)}
+                          className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
+                          title="Edit Drive Details"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDrive(drive.id, drive.titleEn)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0"
+                          title="Delete Drive"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
-
-                    <button
-                      onClick={() => handleDeleteDrive(drive.id, drive.titleEn)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -754,49 +951,122 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           {/* ======================================================= */}
           {activeTab === 'gallery' && (
             <div className="space-y-4">
-              {/* Quick Upload Banner */}
-              <form onSubmit={handleAddGalleryItem} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <input
-                    type="file"
-                    ref={galleryInputRef}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setUploading(true);
-                        const url = await FoundationRepository.uploadImage(file, 'gallery');
-                        setGalleryImagePreview(url);
-                        setUploading(false);
-                      }
-                    }}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => galleryInputRef.current?.click()}
-                    className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 flex items-center gap-2"
-                  >
-                    <Camera className="w-4 h-4 text-emerald-600" />
-                    <span>{galleryImagePreview ? 'Photo Ready ✓' : 'Select Photo to Upload'}</span>
-                  </button>
-
-                  <input
-                    type="text"
-                    placeholder="Photo caption / title"
-                    value={newGalleryTitle}
-                    onChange={e => setNewGalleryTitle(e.target.value)}
-                    className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 w-full sm:w-48"
-                  />
+              {/* Batch Upload Form with Multiple Files Support */}
+              <form onSubmit={handleBatchGalleryUpload} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-bold text-slate-800">Batch Photo Upload (Multiple Selection)</span>
+                  </div>
+                  {selectedGalleryFiles.length > 0 && (
+                    <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      {selectedGalleryFiles.length} photo{selectedGalleryFiles.length > 1 ? 's' : ''} ready
+                    </span>
+                  )}
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={uploading || !galleryImagePreview}
-                  className="w-full sm:w-auto px-4 py-2 bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold"
-                >
-                  Save to Gallery
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-1">
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Select Photos (Multiple)</label>
+                    <input
+                      type="file"
+                      multiple
+                      ref={galleryInputRef}
+                      onChange={handleGalleryFilesSelect}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="w-full px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 flex items-center justify-center gap-2"
+                    >
+                      <Camera className="w-4 h-4 text-emerald-600" />
+                      <span>{selectedGalleryFiles.length > 0 ? `Add More Photos (${selectedGalleryFiles.length})` : 'Choose Photos (Select Multiple)'}</span>
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Caption / Title Prefix</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Flood Relief Distribution"
+                      value={newGalleryTitle}
+                      onChange={e => setNewGalleryTitle(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Category</label>
+                    <select
+                      value={newGalleryCategory}
+                      onChange={e => setNewGalleryCategory(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                    >
+                      <option value="relief">Relief & Food Drive</option>
+                      <option value="medical">Medical Camp</option>
+                      <option value="cultural">Cultural & Festival</option>
+                      <option value="distribution">Blanket & Clothes</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Selected Files Preview Grid */}
+                {galleryFilePreviews.length > 0 && (
+                  <div className="pt-2">
+                    <div className="text-[11px] font-medium text-slate-500 mb-2">
+                      Selected Photos Preview ({galleryFilePreviews.length}):
+                    </div>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-36 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200">
+                      {galleryFilePreviews.map((previewUrl, idx) => (
+                        <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-300 bg-white">
+                          <img src={previewUrl} alt={`Selected preview ${idx + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveGalleryPreview(idx)}
+                            className="absolute top-1 right-1 p-0.5 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity"
+                            title="Remove photo"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload Progress Status */}
+                {uploadProgress && (
+                  <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-center animate-pulse">
+                    {uploadProgress}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                  {selectedGalleryFiles.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedGalleryFiles([]);
+                        setGalleryFilePreviews([]);
+                      }}
+                      className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                    >
+                      Clear Selection
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={uploading || selectedGalleryFiles.length === 0}
+                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-2xs"
+                  >
+                    {uploading 
+                      ? 'Uploading Photos...' 
+                      : `Upload ${selectedGalleryFiles.length > 0 ? selectedGalleryFiles.length : ''} Photo${selectedGalleryFiles.length > 1 ? 's' : ''} to Gallery`
+                    }
+                  </button>
+                </div>
               </form>
 
               {/* Gallery Grid */}
@@ -848,6 +1118,19 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                   >
                     <Upload className="w-4 h-4 text-emerald-400" />
                     <span>Upload New Emblem</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (window.confirm('Reset logo back to default official emblem?')) {
+                        await FoundationRepository.saveCustomLogo('');
+                        notify('Logo reset to default emblem.');
+                      }
+                    }}
+                    disabled={uploading}
+                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Reset Logo</span>
                   </button>
                 </div>
               </div>

@@ -317,6 +317,22 @@ export class FoundationRepository {
         localStorage.setItem(STORAGE_KEYS.ASSISTANCE, JSON.stringify(mapped));
       }
 
+      // 6. Fetch Settings (Logo URL)
+      const { data: settingsData, error: sErr } = await supabase.from('foundation_settings').select('*');
+      if (sErr) {
+        notifySupabaseError(`foundation_settings fetch failed: ${sErr.message}`);
+      } else if (settingsData && settingsData.length > 0) {
+        const logoSetting = settingsData.find((s: any) => s.key === 'logo_url');
+        if (logoSetting) {
+          if (logoSetting.value) {
+            localStorage.setItem('custom_app_logo', logoSetting.value);
+          } else {
+            localStorage.removeItem('custom_app_logo');
+          }
+          window.dispatchEvent(new Event('logo_updated'));
+        }
+      }
+
       window.dispatchEvent(new Event('repository_updated'));
     } catch (err: any) {
       notifySupabaseError(`Supabase sync exception: ${err?.message || 'Unknown error'}`);
@@ -341,6 +357,16 @@ export class FoundationRepository {
       const galleryToDb = INITIAL_GALLERY.map(mapGalleryToDb);
       const { error: gErr } = await supabase.from('gallery').upsert(galleryToDb);
       if (gErr) notifySupabaseError(`Seed gallery error: ${gErr.message}`);
+
+      // Seed logo setting if available in local storage
+      const existingLogo = localStorage.getItem('custom_app_logo');
+      if (existingLogo) {
+        await supabase.from('foundation_settings').upsert({
+          key: 'logo_url',
+          value: existingLogo,
+          updated_at: new Date().toISOString()
+        });
+      }
     } catch (err: any) {
       notifySupabaseError(`Error seeding Supabase defaults: ${err?.message}`);
     }
@@ -530,17 +556,25 @@ export class FoundationRepository {
 
   // Logo sync
   static async saveCustomLogo(imageUrl: string): Promise<void> {
-    localStorage.setItem('custom_app_logo', imageUrl);
+    if (imageUrl) {
+      localStorage.setItem('custom_app_logo', imageUrl);
+    } else {
+      localStorage.removeItem('custom_app_logo');
+    }
     window.dispatchEvent(new Event('logo_updated'));
 
     if (supabase) {
       try {
         const { error } = await supabase.from('foundation_settings').upsert({
           key: 'logo_url',
-          value: imageUrl,
+          value: imageUrl || '',
           updated_at: new Date().toISOString()
         });
-        if (error) notifySupabaseError(`Save logo error: ${error.message}`);
+        if (error) {
+          notifySupabaseError(`Save logo error: ${error.message}`);
+        } else {
+          console.log('Successfully saved custom logo to Supabase');
+        }
       } catch (err: any) {
         notifySupabaseError(`Save logo exception: ${err?.message}`);
       }

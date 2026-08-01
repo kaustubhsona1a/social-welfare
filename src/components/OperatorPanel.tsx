@@ -412,7 +412,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Name (English)</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Leader Full Name</label>
                       <input
                         type="text"
                         placeholder="e.g. Ramesh Das"
@@ -423,33 +423,13 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Name (Odia)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. ରମେଶ ଦାସ"
-                        value={newLeaderNameOr}
-                        onChange={e => setNewLeaderNameOr(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Designation (English)</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Designation / Role</label>
                       <input
                         type="text"
                         placeholder="e.g. President / Treasurer"
                         value={newLeaderRoleEn}
                         onChange={e => setNewLeaderRoleEn(e.target.value)}
                         required
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Designation (Odia)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. ସଭାପତି"
-                        value={newLeaderRoleOr}
-                        onChange={e => setNewLeaderRoleOr(e.target.value)}
                         className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
@@ -531,38 +511,20 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600">Name (English)</label>
+                            <label className="block text-[11px] font-medium text-slate-600">Full Name</label>
                             <input
                               type="text"
                               value={editLeaderData.nameEn || ''}
-                              onChange={e => setEditLeaderData({ ...editLeaderData, nameEn: e.target.value })}
+                              onChange={e => setEditLeaderData({ ...editLeaderData, nameEn: e.target.value, nameOr: editLeaderData.nameOr || e.target.value })}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600">Name (Odia)</label>
-                            <input
-                              type="text"
-                              value={editLeaderData.nameOr || ''}
-                              onChange={e => setEditLeaderData({ ...editLeaderData, nameOr: e.target.value })}
-                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-medium text-slate-600">Designation (English)</label>
+                            <label className="block text-[11px] font-medium text-slate-600">Designation / Role</label>
                             <input
                               type="text"
                               value={editLeaderData.roleEn || ''}
-                              onChange={e => setEditLeaderData({ ...editLeaderData, roleEn: e.target.value })}
-                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-medium text-slate-600">Designation (Odia)</label>
-                            <input
-                              type="text"
-                              value={editLeaderData.roleOr || ''}
-                              onChange={e => setEditLeaderData({ ...editLeaderData, roleOr: e.target.value })}
+                              onChange={e => setEditLeaderData({ ...editLeaderData, roleEn: e.target.value, roleOr: editLeaderData.roleOr || e.target.value })}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
                           </div>

@@ -39,6 +39,7 @@ export default function App() {
 
   useEffect(() => {
     loadRepositoryData();
+    FoundationRepository.syncFromSupabase();
 
     const handleRepoUpdate = () => loadRepositoryData();
     window.addEventListener('repository_updated', handleRepoUpdate);

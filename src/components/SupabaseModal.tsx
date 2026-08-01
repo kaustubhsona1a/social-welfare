@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { X, Check, Copy, Database, ShieldCheck, Terminal, ExternalLink, Zap, AlertCircle } from 'lucide-react';
-import { isSupabaseConfigured, SUPABASE_SQL_SCHEMA } from '../lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { X, Check, Copy, Database, ShieldCheck, Terminal, ExternalLink, Zap, AlertCircle, RefreshCw } from 'lucide-react';
+import { isSupabaseConfigured, SUPABASE_SQL_SCHEMA, FoundationRepository } from '../lib/supabase';
 
 interface SupabaseModalProps {
   isOpen: boolean;
@@ -10,6 +10,26 @@ interface SupabaseModalProps {
 export const SupabaseModal: React.FC<SupabaseModalProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'sql' | 'guide'>('sql');
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    connected: boolean;
+    tablesExist: boolean;
+    bucketExists: boolean;
+    errorDetails?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (isOpen && isSupabaseConfigured) {
+      runTest();
+    }
+  }, [isOpen]);
+
+  const runTest = async () => {
+    setTesting(true);
+    const res = await FoundationRepository.testSupabaseConnection();
+    setTestResult(res);
+    setTesting(false);
+  };
 
   if (!isOpen) return null;
 
@@ -56,34 +76,59 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({ isOpen, onClose })
           </button>
         </div>
 
-        {/* Status Indicator */}
-        <div className={`px-6 py-3 border-b text-xs flex items-center justify-between ${
-          isSupabaseConfigured 
+        {/* Status Indicator & Health Check */}
+        <div className={`px-6 py-3 border-b text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 ${
+          isSupabaseConfigured && testResult?.tablesExist
             ? 'bg-emerald-50 text-emerald-900 border-emerald-200' 
-            : 'bg-amber-50 text-amber-900 border-amber-200'
+            : isSupabaseConfigured && testResult && !testResult.tablesExist
+            ? 'bg-amber-50 text-amber-900 border-amber-200'
+            : 'bg-slate-100 text-slate-800 border-slate-200'
         }`}>
-          <div className="flex items-center gap-2">
-            {isSupabaseConfigured ? (
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="flex items-start gap-2">
+            {isSupabaseConfigured && testResult?.tablesExist ? (
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             )}
-            <span>
-              {isSupabaseConfigured
-                ? 'Supabase credentials detected! App is configured for real-time cloud data.'
-                : 'App is running on persistent client local storage. Follow the script below to connect your Supabase database.'}
-            </span>
+            <div className="space-y-0.5">
+              <div className="font-semibold">
+                {isSupabaseConfigured
+                  ? testResult?.tablesExist 
+                    ? 'Supabase is fully connected, tables verified, and storage ready!'
+                    : 'Supabase credentials set, but SQL tables are missing or not executed yet.'
+                  : 'Running in Local Persistence Mode (No Supabase URL set).'
+                }
+              </div>
+              {testResult?.errorDetails && (
+                <p className="text-[11px] text-amber-800 font-mono">
+                  {testResult.errorDetails}
+                </p>
+              )}
+            </div>
           </div>
 
-          <a
-            href="https://supabase.com/dashboard"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-emerald-700 hover:underline shrink-0"
-          >
-            <span>Supabase Dashboard</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          <div className="flex items-center gap-2 shrink-0">
+            {isSupabaseConfigured && (
+              <button
+                onClick={runTest}
+                disabled={testing}
+                className="inline-flex items-center gap-1 text-[11px] font-mono bg-white hover:bg-slate-50 border border-slate-300 px-2.5 py-1 rounded-lg text-slate-700 transition-colors shadow-2xs"
+              >
+                <RefreshCw className={`w-3 h-3 ${testing ? 'animate-spin text-emerald-600' : ''}`} />
+                <span>{testing ? 'Testing...' : 'Test Sync'}</span>
+              </button>
+            )}
+
+            <a
+              href="https://supabase.com/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-emerald-700 hover:underline"
+            >
+              <span>Dashboard</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
 
         {/* Tab Selection */}

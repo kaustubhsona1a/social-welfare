@@ -1,0 +1,6 @@
+{
+  "name": "Social Welfare Foundation - Babujang Cuttack",
+  "description": "Community welfare association in Babujang, Cuttack (Odisha) providing food, clothing, medical care, and essential financial assistance to needy families.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

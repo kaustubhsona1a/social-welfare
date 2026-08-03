@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Language } from '../types';
 import { FoundationRepository } from '../lib/supabase';
-import { 
-  Phone,
-  ArrowRight
-} from 'lucide-react';
 
 interface HeroProps {
   currentLang: Language;
@@ -63,13 +59,13 @@ export const Hero: React.FC<HeroProps> = ({
           }}
         />
 
-        {/* Ambient Gradient Overlays for readable buttons */}
+        {/* Ambient Gradient Overlays (subtle fade on scroll) */}
         <div 
           className="absolute inset-0 transition-opacity duration-500 ease-out pointer-events-none"
           style={{
             background: scrollRatio > 0.1 
               ? `radial-gradient(circle at 50% 50%, rgba(15, 23, 42, ${0.2 + scrollRatio * 0.4}), rgba(2, 6, 23, ${0.5 + scrollRatio * 0.3}))`
-              : 'linear-gradient(to top, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.2) 50%, rgba(15, 23, 42, 0.4) 100%)'
+              : 'transparent'
           }}
         />
 
@@ -81,27 +77,6 @@ export const Hero: React.FC<HeroProps> = ({
             backgroundColor: `rgba(255, 255, 255, ${scrollRatio * 0.12})`
           }}
         />
-      </div>
-
-      {/* Floating Glass Action Buttons Container */}
-      <div className="relative z-10 w-full max-w-lg mx-auto px-4 text-center">
-        <div className="bg-slate-900/60 backdrop-blur-xl p-3.5 sm:p-4 rounded-3xl border border-white/20 shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-3 transition-all duration-300 hover:bg-slate-900/70">
-          <button
-            onClick={onOpenContactModal}
-            className="w-full sm:w-1/2 inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm px-6 py-3.5 rounded-2xl shadow-lg transition-all active:scale-98"
-          >
-            <Phone className="w-4 h-4 text-emerald-200" />
-            <span>{currentLang === 'or' ? 'ଯୋଗାଯୋଗ କରନ୍ତୁ' : 'Contact Office'}</span>
-          </button>
-
-          <button
-            onClick={onExploreWork}
-            className="w-full sm:w-1/2 inline-flex items-center justify-center gap-2 bg-white/90 hover:bg-white text-slate-900 font-bold text-xs sm:text-sm px-6 py-3.5 rounded-2xl shadow-md transition-all active:scale-98"
-          >
-            <span>{currentLang === 'or' ? 'ସେବା କାର୍ଯ୍ୟ ଦେଖନ୍ତୁ' : 'Explore Services'}</span>
-            <ArrowRight className="w-4 h-4 text-emerald-700" />
-          </button>
-        </div>
       </div>
 
     </section>

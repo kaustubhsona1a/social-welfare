@@ -84,3 +84,13 @@ export interface DonorRecord {
   timestamp: string;
   transactionRef: string;
 }
+
+export interface PaymentInfo {
+  upiQrUrl: string;
+  upiId: string;
+  accountNo: string;
+  ifscCode: string;
+  bankName: string;
+  accountHolder: string;
+}
+

@@ -19,7 +19,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { FoundationRepository, isSupabaseConfigured, SUPABASE_SQL_SCHEMA } from '../lib/supabase';
-import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest } from '../types';
+import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest, PaymentInfo } from '../types';
 
 interface OperatorPanelProps {
   isOpen: boolean;
@@ -67,11 +67,19 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [galleryFilePreviews, setGalleryFilePreviews] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
+  // --- BRANDING & BACKGROUND STATE ---
+  const [heroBgPreview, setHeroBgPreview] = useState<string | null>(FoundationRepository.getHeroBg());
+
+  // --- PAYMENT & UPI BARCODE STATE ---
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>(() => FoundationRepository.getPaymentInfo());
+
   // File Refs
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const heroBgInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const leaderPhotoInputRef = useRef<HTMLInputElement>(null);
   const drivePhotoInputRef = useRef<HTMLInputElement>(null);
+  const upiQrInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -87,7 +95,41 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   };
 
   // ----------------------------------------------------
-  // LOGO UPLOAD
+  // PAYMENT & UPI BARCODE HANDLERS
+  // ----------------------------------------------------
+  const handleUpiQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploading(true);
+      try {
+        const imageUrl = await FoundationRepository.uploadImage(file, 'payment_qr');
+        const updated = await FoundationRepository.savePaymentInfo({ upiQrUrl: imageUrl });
+        setPaymentInfo(updated);
+        notify('UPI Barcode / QR Code updated!');
+      } catch (err: any) {
+        alert('Barcode upload failed.');
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const handleSavePaymentDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploading(true);
+    try {
+      const updated = await FoundationRepository.savePaymentInfo(paymentInfo);
+      setPaymentInfo(updated);
+      notify('Payment details & UPI ID saved successfully!');
+    } catch (err: any) {
+      alert('Failed to save payment info.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // ----------------------------------------------------
+  // LOGO & HERO BG UPLOAD
   // ----------------------------------------------------
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,6 +144,35 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
       } finally {
         setUploading(false);
       }
+    }
+  };
+
+  const handleHeroBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 8 * 1024 * 1024) {
+        alert('Hero background image must be under 8MB.');
+        return;
+      }
+      setUploading(true);
+      try {
+        const imageUrl = await FoundationRepository.uploadImage(file, 'backgrounds');
+        await FoundationRepository.saveHeroBg(imageUrl);
+        setHeroBgPreview(imageUrl);
+        notify('Home background image updated!');
+      } catch (err: any) {
+        alert(`Hero background upload failed: ${err?.message || 'Error'}`);
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const handleResetHeroBg = async () => {
+    if (window.confirm('Reset home background to default gradient?')) {
+      await FoundationRepository.saveHeroBg('');
+      setHeroBgPreview(null);
+      notify('Home background reset to default.');
     }
   };
 
@@ -415,7 +486,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           >
             <span className="flex items-center gap-1.5">
               <Upload className="w-3.5 h-3.5" />
-              <span>Logo & Database</span>
+              <span>Branding & Background</span>
             </span>
           </button>
 
@@ -1090,10 +1161,181 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           )}
 
           {/* ======================================================= */}
-          {/* TAB 4: LOGO & DATABASE                                  */}
+          {/* TAB 4: BRANDING & PAYMENT QR                            */}
           {/* ======================================================= */}
           {activeTab === 'upload' && (
             <div className="space-y-4 max-w-2xl mx-auto">
+
+              {/* Donate Section UPI Barcode & Payment Details Card */}
+              <div className="bg-white p-5 rounded-xl border border-emerald-300 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-2">
+                    <HeartHandshake className="w-4 h-4 text-emerald-600" />
+                    <span>NGO Donate UPI Barcode & Payment Settings</span>
+                  </h4>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Live in Donate Section
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Upload the official UPI Payment QR Code Barcode image for donors to scan and pay directly to the foundation bank account.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                  <div className="flex flex-col items-center justify-center space-y-2 sm:col-span-1">
+                    <div className="w-32 h-32 bg-white p-2 rounded-xl border border-slate-300 shadow-2xs flex items-center justify-center overflow-hidden">
+                      <img src={paymentInfo.upiQrUrl} alt="Payment UPI Barcode" className="w-full h-full object-contain" />
+                    </div>
+                    <input
+                      type="file"
+                      ref={upiQrInputRef}
+                      onChange={handleUpiQrUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => upiQrInputRef.current?.click()}
+                      disabled={uploading}
+                      className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-medium rounded-lg inline-flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-emerald-200" />
+                      <span>Upload New Barcode</span>
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSavePaymentDetails} className="sm:col-span-2 space-y-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700">UPI ID / VPA Address</label>
+                      <input
+                        type="text"
+                        value={paymentInfo.upiId}
+                        onChange={e => setPaymentInfo({ ...paymentInfo, upiId: e.target.value })}
+                        placeholder="e.g. socialwelfare@upi"
+                        required
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-emerald-500 font-mono"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700">Bank Account No.</label>
+                        <input
+                          type="text"
+                          value={paymentInfo.accountNo}
+                          onChange={e => setPaymentInfo({ ...paymentInfo, accountNo: e.target.value })}
+                          placeholder="e.g. 398201000456"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700">IFSC Code</label>
+                        <input
+                          type="text"
+                          value={paymentInfo.ifscCode}
+                          onChange={e => setPaymentInfo({ ...paymentInfo, ifscCode: e.target.value })}
+                          placeholder="e.g. SBIN0001234"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700">Bank Name</label>
+                        <input
+                          type="text"
+                          value={paymentInfo.bankName}
+                          onChange={e => setPaymentInfo({ ...paymentInfo, bankName: e.target.value })}
+                          placeholder="e.g. State Bank of India"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700">Account Holder</label>
+                        <input
+                          type="text"
+                          value={paymentInfo.accountHolder}
+                          onChange={e => setPaymentInfo({ ...paymentInfo, accountHolder: e.target.value })}
+                          placeholder="e.g. Social Welfare Foundation"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-1 flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={uploading}
+                        className="px-4 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs rounded-lg shadow-2xs"
+                      >
+                        Save Payment & UPI Details
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              {/* Home Page Background Image Upload Card */}
+              <div className="bg-white p-5 rounded-xl border border-emerald-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-emerald-600" />
+                    <span>Home Page Hero Background Image</span>
+                  </h4>
+                  {heroBgPreview && (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Custom Active ✓
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Upload a high-resolution background photo for the Home page hero section. When visitors scroll down, the background image smoothly diffuses with a Liquid Glass backdrop blur effect!
+                </p>
+
+                {heroBgPreview && (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200 h-32 bg-slate-900 group">
+                    <img src={heroBgPreview} alt="Hero Background Preview" className="w-full h-full object-cover opacity-80" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-3">
+                      <span className="text-white text-xs font-medium">Liquid Glass Scroll Background Active</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 pt-1">
+                  <input
+                    type="file"
+                    ref={heroBgInputRef}
+                    onChange={handleHeroBgUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => heroBgInputRef.current?.click()}
+                    disabled={uploading}
+                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg inline-flex items-center gap-2 shadow-2xs"
+                  >
+                    <Camera className="w-4 h-4 text-emerald-200" />
+                    <span>{heroBgPreview ? 'Change Home Background' : 'Upload Home Background Image'}</span>
+                  </button>
+
+                  {heroBgPreview && (
+                    <button
+                      type="button"
+                      onClick={handleResetHeroBg}
+                      disabled={uploading}
+                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Remove / Reset Background</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Logo Upload Card */}
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">

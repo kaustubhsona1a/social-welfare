@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language } from '../types';
-import { FOUNDATION_INFO } from '../data/mockData';
+import { FoundationRepository } from '../lib/supabase';
 import { 
   Phone,
-  ArrowRight,
-  ShieldCheck
+  ArrowRight
 } from 'lucide-react';
 
 interface HeroProps {
@@ -18,97 +17,93 @@ export const Hero: React.FC<HeroProps> = ({
   onOpenContactModal,
   onExploreWork
 }) => {
+  const [heroBgUrl, setHeroBgUrl] = useState<string | null>(FoundationRepository.getHeroBg());
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const loadHeroBg = () => {
+      setHeroBgUrl(FoundationRepository.getHeroBg());
+    };
+    loadHeroBg();
+
+    window.addEventListener('hero_bg_updated', loadHeroBg);
+    window.addEventListener('repository_updated', loadHeroBg);
+
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('hero_bg_updated', loadHeroBg);
+      window.removeEventListener('repository_updated', loadHeroBg);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Calculate liquid glass diffusion parameters based on scroll depth
+  const scrollRatio = Math.min(1, Math.max(0, scrollY / 300));
+  const isScrolled = scrollY > 20;
+
+  // Default fallback hero image if no custom operator background uploaded
+  const activeBgImage = heroBgUrl || "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=1600&auto=format&fit=crop";
+
   return (
-    <section id="home" className="relative py-10 sm:py-20 bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-50 overflow-hidden">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6 sm:space-y-8 relative z-10">
-        
-        {/* Government Reg Badge */}
-        <div className="inline-flex flex-wrap sm:flex-nowrap items-center justify-center gap-1.5 sm:gap-2 bg-white px-3.5 py-1.5 rounded-full border border-sky-200/90 shadow-2xs text-[11px] sm:text-xs font-light text-slate-700 max-w-full">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600 shrink-0" />
-            <span>Govt Reg: <strong className="font-mono text-slate-900 font-medium">{FOUNDATION_INFO.regNo}</strong></span>
-          </div>
-          <span className="hidden sm:inline text-slate-300">•</span>
-          <span className="text-sky-800 font-medium text-[10px] sm:text-xs bg-sky-50 px-2 py-0.5 rounded-full sm:bg-transparent sm:p-0">Babujang, Cuttack</span>
-        </div>
+    <section id="home" className="relative overflow-hidden min-h-[calc(100dvh-80px)] sm:min-h-[85vh] flex items-center justify-center py-8 sm:py-16">
+      
+      {/* Liquid Glass Background Layer */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
+        <img 
+          src={activeBgImage} 
+          alt="Social Welfare Foundation" 
+          className="w-full h-full object-cover transition-all duration-700 ease-out scale-100"
+          style={{
+            filter: `blur(${scrollRatio * 16}px) brightness(${1 - scrollRatio * 0.25})`,
+            transform: `scale(${1 + scrollRatio * 0.04})`
+          }}
+        />
 
-        {/* Hero Headline */}
-        <div className="space-y-3 sm:space-y-4 max-w-4xl mx-auto px-1 sm:px-0">
-          <h1 className="text-2xl xs:text-3xl sm:text-5xl lg:text-6xl font-light text-slate-900 leading-tight sm:leading-[1.2] tracking-tight font-heading">
-            {currentLang === 'or' ? (
-              <>
-                <span className="font-oriya font-bold text-emerald-600 uppercase block text-xl xs:text-2xl sm:text-4xl lg:text-5xl leading-snug">
-                  ସୋସିଆଲ ୱେଲଫେର ଫାଉଣ୍ଡେସନ
-                </span>
-                <span className="text-lg xs:text-xl sm:text-3xl lg:text-4xl text-sky-800 font-light font-oriya pt-1 block">
-                  "ମାନବ ସେବା ହିଁ ମାଧବ ସେବା"
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="font-black text-emerald-600 uppercase tracking-wide sm:tracking-wider block text-xl xs:text-2xl sm:text-4xl lg:text-5xl leading-tight">
-                  SOCIAL WELFARE FOUNDATION
-                </span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-700 to-blue-900 font-normal block text-lg xs:text-2xl sm:text-4xl lg:text-5xl pt-1">
-                  Babujang, Cuttack
-                </span>
-              </>
-            )}
-          </h1>
+        {/* Ambient Gradient Overlays for readable buttons */}
+        <div 
+          className="absolute inset-0 transition-opacity duration-500 ease-out pointer-events-none"
+          style={{
+            background: scrollRatio > 0.1 
+              ? `radial-gradient(circle at 50% 50%, rgba(15, 23, 42, ${0.2 + scrollRatio * 0.4}), rgba(2, 6, 23, ${0.5 + scrollRatio * 0.3}))`
+              : 'linear-gradient(to top, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.2) 50%, rgba(15, 23, 42, 0.4) 100%)'
+          }}
+        />
 
-          <p className="text-xs sm:text-base lg:text-lg text-slate-600 font-light max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
-            {currentLang === 'or' ? (
-              'ବାବୁଜଙ୍ଗ ଓ କଟକ ଅଞ୍ଚଳରେ ନିଃସହାୟ ପରିବାର, ବୃଦ୍ଧବୃଦ୍ଧା ଓ ଗରିବ ଛାତ୍ରଛାତ୍ରୀଙ୍କ ପାଇଁ ନିୟମିତ ମାଗଣା ରାସନ, ନୂତନ ପୋଷାକ, କମ୍ବଳ ଏବଂ ଜରୁରୀ ଚିକିତ୍ସା ସହାୟତା।'
-            ) : (
-              'Direct food security, winter clothing, medical aid, and emergency relief delivered directly to helpless destitute families across Babujang and Cuttack district.'
-            )}
-          </p>
-        </div>
+        {/* Liquid Glass Frosting Overlay on Scroll */}
+        <div 
+          className="absolute inset-0 backdrop-blur-xs transition-all duration-500 pointer-events-none"
+          style={{
+            backdropFilter: `blur(${scrollRatio * 10}px)`,
+            backgroundColor: `rgba(255, 255, 255, ${scrollRatio * 0.12})`
+          }}
+        />
+      </div>
 
-        {/* Call to Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-4 w-full max-w-xs sm:max-w-none mx-auto pt-1 sm:pt-2">
+      {/* Floating Glass Action Buttons Container */}
+      <div className="relative z-10 w-full max-w-lg mx-auto px-4 text-center">
+        <div className="bg-slate-900/60 backdrop-blur-xl p-3.5 sm:p-4 rounded-3xl border border-white/20 shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-3 transition-all duration-300 hover:bg-slate-900/70">
           <button
             onClick={onOpenContactModal}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-700 to-blue-900 hover:from-sky-800 hover:to-blue-950 text-white font-light text-xs sm:text-sm px-6 py-3 sm:px-7 sm:py-3.5 rounded-full shadow-xs hover:shadow-md transition-all active:scale-98"
+            className="w-full sm:w-1/2 inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm px-6 py-3.5 rounded-2xl shadow-lg transition-all active:scale-98"
           >
-            <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-300" />
+            <Phone className="w-4 h-4 text-emerald-200" />
             <span>{currentLang === 'or' ? 'ଯୋଗାଯୋଗ କରନ୍ତୁ' : 'Contact Office'}</span>
           </button>
 
           <button
             onClick={onExploreWork}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-100 text-slate-800 font-light text-xs sm:text-sm px-6 py-3 sm:py-3.5 rounded-full border border-slate-200 shadow-2xs transition-all active:scale-98"
+            className="w-full sm:w-1/2 inline-flex items-center justify-center gap-2 bg-white/90 hover:bg-white text-slate-900 font-bold text-xs sm:text-sm px-6 py-3.5 rounded-2xl shadow-md transition-all active:scale-98"
           >
             <span>{currentLang === 'or' ? 'ସେବା କାର୍ଯ୍ୟ ଦେଖନ୍ତୁ' : 'Explore Services'}</span>
-            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500" />
+            <ArrowRight className="w-4 h-4 text-emerald-700" />
           </button>
         </div>
-
-        {/* Clean 3-Column Stats Row */}
-        <div className="pt-4 sm:pt-8 max-w-3xl mx-auto grid grid-cols-3 gap-2 sm:gap-4 text-center">
-          <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-sky-100 shadow-2xs space-y-0.5 sm:space-y-1 flex flex-col justify-center">
-            <div className="text-lg xs:text-xl sm:text-2xl font-normal text-sky-950 font-mono">1,250+</div>
-            <div className="text-[10px] sm:text-xs font-light text-slate-600 leading-tight">
-              {currentLang === 'or' ? 'ସହାୟତା ପ୍ରାପ୍ତ ପରିବାର' : 'Families Supported'}
-            </div>
-          </div>
-
-          <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-sky-100 shadow-2xs space-y-0.5 sm:space-y-1 flex flex-col justify-center">
-            <div className="text-lg xs:text-xl sm:text-2xl font-normal text-sky-950 font-mono">800+</div>
-            <div className="text-[10px] sm:text-xs font-light text-slate-600 leading-tight">
-              {currentLang === 'or' ? 'ବସ୍ତ୍ର ବଣ୍ଟନ' : 'Clothes & Blankets'}
-            </div>
-          </div>
-
-          <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-sky-100 shadow-2xs space-y-0.5 sm:space-y-1 flex flex-col justify-center">
-            <div className="text-lg xs:text-xl sm:text-2xl font-normal text-sky-950 font-mono">100%</div>
-            <div className="text-[10px] sm:text-xs font-light text-slate-600 leading-tight">
-              {currentLang === 'or' ? 'ନିଃସ୍ୱାର୍ଥପର ସେବା' : 'Non-Profit Trust'}
-            </div>
-          </div>
-        </div>
-
       </div>
+
     </section>
   );
 };

@@ -13,7 +13,8 @@ import {
   SuccessStory, 
   GalleryItem, 
   AssistanceRequest, 
-  DonorRecord 
+  DonorRecord,
+  PaymentInfo
 } from '../types';
 
 // Read env variables if available
@@ -27,6 +28,15 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+export const DEFAULT_PAYMENT_INFO: PaymentInfo = {
+  upiQrUrl: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=600&auto=format&fit=crop',
+  upiId: 'socialwelfare@upi',
+  accountNo: '398201000456',
+  ifscCode: 'SBIN0001234',
+  bankName: 'State Bank of India',
+  accountHolder: 'Social Welfare Foundation Babujang',
+};
+
 // Local storage keys
 const STORAGE_KEYS = {
   DRIVES: 'swf_drives_v1',
@@ -35,6 +45,7 @@ const STORAGE_KEYS = {
   GALLERY: 'swf_gallery_v1',
   DONORS: 'swf_donors_v1',
   ASSISTANCE: 'swf_assistance_v1',
+  PAYMENT: 'swf_payment_info_v1',
 };
 
 // Global error tracker for UI notifications
@@ -317,7 +328,7 @@ export class FoundationRepository {
         localStorage.setItem(STORAGE_KEYS.ASSISTANCE, JSON.stringify(mapped));
       }
 
-      // 6. Fetch Settings (Logo URL)
+      // 6. Fetch Settings (Logo URL & Hero BG URL)
       const { data: settingsData, error: sErr } = await supabase.from('foundation_settings').select('*');
       if (sErr) {
         notifySupabaseError(`foundation_settings fetch failed: ${sErr.message}`);
@@ -330,6 +341,38 @@ export class FoundationRepository {
             localStorage.removeItem('custom_app_logo');
           }
           window.dispatchEvent(new Event('logo_updated'));
+        }
+
+        const heroBgSetting = settingsData.find((s: any) => s.key === 'hero_bg_url');
+        if (heroBgSetting) {
+          if (heroBgSetting.value) {
+            localStorage.setItem('custom_hero_bg', heroBgSetting.value);
+          } else {
+            localStorage.removeItem('custom_hero_bg');
+          }
+          window.dispatchEvent(new Event('hero_bg_updated'));
+        }
+
+        // Fetch payment settings
+        const currentPayment = this.getPaymentInfo();
+        const upiQrSetting = settingsData.find((s: any) => s.key === 'upi_qr_url')?.value;
+        const upiIdSetting = settingsData.find((s: any) => s.key === 'upi_id')?.value;
+        const accNoSetting = settingsData.find((s: any) => s.key === 'bank_account_no')?.value;
+        const ifscSetting = settingsData.find((s: any) => s.key === 'bank_ifsc')?.value;
+        const bankNameSetting = settingsData.find((s: any) => s.key === 'bank_name')?.value;
+        const accHolderSetting = settingsData.find((s: any) => s.key === 'account_holder')?.value;
+
+        if (upiQrSetting !== undefined || upiIdSetting !== undefined) {
+          const updatedInfo: PaymentInfo = {
+            upiQrUrl: upiQrSetting !== undefined ? upiQrSetting : currentPayment.upiQrUrl,
+            upiId: upiIdSetting !== undefined ? upiIdSetting : currentPayment.upiId,
+            accountNo: accNoSetting !== undefined ? accNoSetting : currentPayment.accountNo,
+            ifscCode: ifscSetting !== undefined ? ifscSetting : currentPayment.ifscCode,
+            bankName: bankNameSetting !== undefined ? bankNameSetting : currentPayment.bankName,
+            accountHolder: accHolderSetting !== undefined ? accHolderSetting : currentPayment.accountHolder,
+          };
+          localStorage.setItem(STORAGE_KEYS.PAYMENT, JSON.stringify(updatedInfo));
+          window.dispatchEvent(new Event('payment_info_updated'));
         }
       }
 
@@ -579,6 +622,83 @@ export class FoundationRepository {
         notifySupabaseError(`Save logo exception: ${err?.message}`);
       }
     }
+  }
+
+  // Hero Background sync
+  static getHeroBg(): string | null {
+    return localStorage.getItem('custom_hero_bg');
+  }
+
+  static async saveHeroBg(imageUrl: string): Promise<void> {
+    if (imageUrl) {
+      localStorage.setItem('custom_hero_bg', imageUrl);
+    } else {
+      localStorage.removeItem('custom_hero_bg');
+    }
+    window.dispatchEvent(new Event('hero_bg_updated'));
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('foundation_settings').upsert({
+          key: 'hero_bg_url',
+          value: imageUrl || '',
+          updated_at: new Date().toISOString()
+        });
+        if (error) {
+          notifySupabaseError(`Save hero background error: ${error.message}`);
+        } else {
+          console.log('Successfully saved custom hero background to Supabase');
+        }
+      } catch (err: any) {
+        notifySupabaseError(`Save hero background exception: ${err?.message}`);
+      }
+    }
+  }
+
+  // Payment Info & UPI Barcode Sync
+  static getPaymentInfo(): PaymentInfo {
+    const cached = localStorage.getItem(STORAGE_KEYS.PAYMENT);
+    if (!cached) {
+      localStorage.setItem(STORAGE_KEYS.PAYMENT, JSON.stringify(DEFAULT_PAYMENT_INFO));
+      return DEFAULT_PAYMENT_INFO;
+    }
+    try {
+      return { ...DEFAULT_PAYMENT_INFO, ...JSON.parse(cached) };
+    } catch {
+      return DEFAULT_PAYMENT_INFO;
+    }
+  }
+
+  static async savePaymentInfo(info: Partial<PaymentInfo>): Promise<PaymentInfo> {
+    const current = this.getPaymentInfo();
+    const updated: PaymentInfo = { ...current, ...info };
+    localStorage.setItem(STORAGE_KEYS.PAYMENT, JSON.stringify(updated));
+    window.dispatchEvent(new Event('payment_info_updated'));
+    window.dispatchEvent(new Event('repository_updated'));
+
+    if (supabase) {
+      try {
+        const upsertSettings = [
+          { key: 'upi_qr_url', value: updated.upiQrUrl || '' },
+          { key: 'upi_id', value: updated.upiId || '' },
+          { key: 'bank_account_no', value: updated.accountNo || '' },
+          { key: 'bank_ifsc', value: updated.ifscCode || '' },
+          { key: 'bank_name', value: updated.bankName || '' },
+          { key: 'account_holder', value: updated.accountHolder || '' },
+        ].map(item => ({ ...item, updated_at: new Date().toISOString() }));
+
+        const { error } = await supabase.from('foundation_settings').upsert(upsertSettings);
+        if (error) {
+          notifySupabaseError(`Save payment info error: ${error.message}`);
+        } else {
+          console.log('Successfully saved payment settings & UPI barcode to Supabase');
+        }
+      } catch (err: any) {
+        notifySupabaseError(`Save payment info exception: ${err?.message}`);
+      }
+    }
+
+    return updated;
   }
 
   // Image File Helper: Uploads to Supabase Storage if bucket exists, or converts to Base64

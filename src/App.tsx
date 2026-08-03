@@ -5,10 +5,9 @@ import { FoundationRepository } from './lib/supabase';
 // Components
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { CurrentDrives } from './components/CurrentDrives';
-import { PillarsOfService } from './components/PillarsOfService';
+import { InitiativesAndWork } from './components/InitiativesAndWork';
 import { LeadershipSection } from './components/LeadershipSection';
-import { SuccessStories } from './components/SuccessStories';
+import { DonateAndImpact } from './components/DonateAndImpact';
 import { GallerySection } from './components/GallerySection';
 import { ContactModal } from './components/ContactModal';
 import { SupabaseModal } from './components/SupabaseModal';
@@ -78,20 +77,14 @@ export default function App() {
           currentLang={currentLang}
           onOpenContactModal={() => setIsContactOpen(true)}
           onExploreWork={() => {
-            const el = document.getElementById('drives');
+            const el = document.getElementById('initiatives');
             if (el) el.scrollIntoView({ behavior: 'smooth' });
           }}
         />
 
-        {/* Current Initiatives */}
-        <CurrentDrives
+        {/* Initiatives & Our Work (Consolidated Section) */}
+        <InitiativesAndWork
           drives={drives}
-          currentLang={currentLang}
-          onOpenContactModal={() => setIsContactOpen(true)}
-        />
-
-        {/* Pillars of Service */}
-        <PillarsOfService
           currentLang={currentLang}
           onOpenContactModal={() => setIsContactOpen(true)}
         />
@@ -102,10 +95,11 @@ export default function App() {
           currentLang={currentLang}
         />
 
-        {/* Success Stories & Community Impact */}
-        <SuccessStories
+        {/* Donate & Impact (Integrated Payment Portal + Success Stories) */}
+        <DonateAndImpact
           stories={stories}
           currentLang={currentLang}
+          onOpenContactModal={() => setIsContactOpen(true)}
         />
 
         {/* Activity & Photo Gallery */}

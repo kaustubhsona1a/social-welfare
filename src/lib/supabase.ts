@@ -5,7 +5,9 @@ import {
   INITIAL_LEADERSHIP, 
   INITIAL_SUCCESS_STORIES, 
   INITIAL_GALLERY, 
-  INITIAL_RECENT_DONORS 
+  INITIAL_RECENT_DONORS,
+  INITIAL_DOCUMENTS,
+  INITIAL_NEWS_EVENTS
 } from '../data/mockData';
 import { 
   DonationDrive, 
@@ -14,7 +16,9 @@ import {
   GalleryItem, 
   AssistanceRequest, 
   DonorRecord,
-  PaymentInfo
+  PaymentInfo,
+  TransparencyDocument,
+  NewsEventItem
 } from '../types';
 
 // Read env variables if available
@@ -624,36 +628,100 @@ export class FoundationRepository {
     }
   }
 
-  // Hero Background sync
+  // Hero Background sync (Desktop & Mobile)
   static getHeroBg(): string | null {
-    return localStorage.getItem('custom_hero_bg');
+    return localStorage.getItem('custom_desktop_hero_bg') || localStorage.getItem('custom_hero_bg');
+  }
+
+  static getDesktopHeroBg(): string | null {
+    return localStorage.getItem('custom_desktop_hero_bg') || localStorage.getItem('custom_hero_bg');
+  }
+
+  static getMobileHeroBg(): string | null {
+    return localStorage.getItem('custom_mobile_hero_bg');
   }
 
   static async saveHeroBg(imageUrl: string): Promise<void> {
+    return this.saveDesktopHeroBg(imageUrl);
+  }
+
+  static async saveDesktopHeroBg(imageUrl: string): Promise<void> {
     if (imageUrl) {
+      localStorage.setItem('custom_desktop_hero_bg', imageUrl);
       localStorage.setItem('custom_hero_bg', imageUrl);
     } else {
+      localStorage.removeItem('custom_desktop_hero_bg');
       localStorage.removeItem('custom_hero_bg');
     }
     window.dispatchEvent(new Event('hero_bg_updated'));
 
     if (supabase) {
       try {
-        const { error } = await supabase.from('foundation_settings').upsert({
+        await supabase.from('foundation_settings').upsert({
           key: 'hero_bg_url',
           value: imageUrl || '',
           updated_at: new Date().toISOString()
         });
-        if (error) {
-          notifySupabaseError(`Save hero background error: ${error.message}`);
-        } else {
-          console.log('Successfully saved custom hero background to Supabase');
-        }
+        await supabase.from('foundation_settings').upsert({
+          key: 'desktop_hero_bg_url',
+          value: imageUrl || '',
+          updated_at: new Date().toISOString()
+        });
       } catch (err: any) {
-        notifySupabaseError(`Save hero background exception: ${err?.message}`);
+        notifySupabaseError(`Save desktop hero bg exception: ${err?.message}`);
       }
     }
   }
+
+  static async saveMobileHeroBg(imageUrl: string): Promise<void> {
+    if (imageUrl) {
+      localStorage.setItem('custom_mobile_hero_bg', imageUrl);
+    } else {
+      localStorage.removeItem('custom_mobile_hero_bg');
+    }
+    window.dispatchEvent(new Event('hero_bg_updated'));
+
+    if (supabase) {
+      try {
+        await supabase.from('foundation_settings').upsert({
+          key: 'mobile_hero_bg_url',
+          value: imageUrl || '',
+          updated_at: new Date().toISOString()
+        });
+      } catch (err: any) {
+        notifySupabaseError(`Save mobile hero bg exception: ${err?.message}`);
+      }
+    }
+  }
+
+  // Documents Folder / Transparency Data
+  static getDocuments(): TransparencyDocument[] {
+    const cached = localStorage.getItem('swf_documents_v1');
+    if (!cached) {
+      localStorage.setItem('swf_documents_v1', JSON.stringify(INITIAL_DOCUMENTS));
+      return INITIAL_DOCUMENTS;
+    }
+    try {
+      return JSON.parse(cached);
+    } catch {
+      return INITIAL_DOCUMENTS;
+    }
+  }
+
+  // News & Events Data
+  static getNewsEvents(): NewsEventItem[] {
+    const cached = localStorage.getItem('swf_news_events_v1');
+    if (!cached) {
+      localStorage.setItem('swf_news_events_v1', JSON.stringify(INITIAL_NEWS_EVENTS));
+      return INITIAL_NEWS_EVENTS;
+    }
+    try {
+      return JSON.parse(cached);
+    } catch {
+      return INITIAL_NEWS_EVENTS;
+    }
+  }
+
 
   // Payment Info & UPI Barcode Sync
   static getPaymentInfo(): PaymentInfo {

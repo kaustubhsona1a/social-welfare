@@ -413,8 +413,14 @@ export const DonateAndImpact: React.FC<DonateAndImpactProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
                 <button
-                  onClick={() => setSelectedStory(null)}
-                  className="absolute top-4 right-4 p-2.5 bg-slate-900/80 hover:bg-slate-950 text-white rounded-full transition-colors border border-white/20"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedStory(null);
+                  }}
+                  className="absolute top-4 right-4 z-30 p-2.5 bg-slate-900/80 hover:bg-slate-950 text-white rounded-full transition-colors border border-white/20 cursor-pointer"
+                  aria-label="Close story"
                 >
                   <X className="w-5 h-5" />
                 </button>

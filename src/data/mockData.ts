@@ -1,19 +1,30 @@
-import { OfficeBearer, DonationDrive, SuccessStory, GalleryItem, DonorRecord } from '../types';
+import { OfficeBearer, DonationDrive, SuccessStory, GalleryItem, DonorRecord, TransparencyDocument, NewsEventItem } from '../types';
 
 export const FOUNDATION_INFO = {
   nameEn: "Social Welfare Foundation",
+  nameHi: "सोशल वेलफेयर फाउंडेशन",
   nameOr: "ସୋସିଆଲ ୱେଲଫେର ଫାଉଣ୍ଡେସନ",
   subLocationEn: "Babujang, Cuttack",
+  subLocationHi: "बाबुजांग, कटक",
   subLocationOr: "ବାବୁଜଙ୍ଗ, କଟକ",
   taglineEn: "Services to Humanity",
+  taglineHi: "मानव सेवा ही ईश्वर सेवा",
   taglineOr: "ମାନବ ସେବା ହିଁ ମାଧବ ସେବା",
   regNo: "40762401394 / 2024",
+  panNo: "AAATS0192K",
+  a12aNo: "12A/2024/SWF/4092",
+  g80No: "80G/2024/SWF/9912",
+  csrRegNo: "CSR00081920",
   estdYear: "2024",
   addressEn: "At/Po. Babujang, Via. Tyendakura, P.S.- Kishore Nagar, Dist. Cuttack, Odisha - 754134",
+  addressHi: "ग्राम/पो.- बाबुजांग, भाया- त्येंदाकुड़ा, थाना- किशोर नगर, जिला- कटक, ओडिशा - 754134",
   addressOr: "ଅଟ/ପୋ - ବାବୁଜଙ୍ଗ, ଭାୟା - ତ୍ୟେନ୍ଦାକୁରା, ଥାନା - କିଶୋର ନଗର, ଜିଲ୍ଲା - କଟକ, ଓଡ଼ିଶା - ୭୫୪୧୩୪",
   phone: "+91 95948 81882",
+  phoneSecondary: "+91 97770 85775",
+  whatsappNumber: "919594881882",
   email: "contact@swf-babujang.org",
   facebookUrl: "https://www.facebook.com/share/1BY4rzh3Za/?mibextid=wwXIfr",
+  mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14959.043818987343!2d86.0821!3d20.4812!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a199cf000000001%3A0x1!2sBabujang%2C%20Cuttack%2C%20Odisha!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin",
   bankDetails: {
     accountName: "SOCIAL WELFARE FOUNDATION BABUJANG",
     bankName: "State Bank of India (SBI)",
@@ -23,6 +34,159 @@ export const FOUNDATION_INFO = {
     upiId: "9594881882@sbi",
   }
 };
+
+export const INITIAL_DOCUMENTS: TransparencyDocument[] = [
+  {
+    id: "doc-1",
+    titleEn: "Trust Registration Certificate",
+    titleHi: "ट्रस्ट पंजीकरण प्रमाण पत्र",
+    titleOr: "ଟ୍ରଷ୍ଟ ପଞ୍ଜୀକରଣ ପ୍ରମାଣପତ୍ର",
+    category: "registration",
+    docNumber: "40762401394 / 2024",
+    issueDate: "14 Feb 2024",
+    status: "approved",
+    descriptionEn: "Government of Odisha Sub-Registrar Office, Cuttack certified public charitable trust certificate.",
+    descriptionHi: "ओडिशा सरकार सब-रजिस्ट्रार कार्यालय, कटक द्वारा पंजीकृत सार्वजनिक धर्मार्थ ट्रस्ट।",
+    descriptionOr: "ଓଡ଼ିଶା ସରକାର ସବ-ରେଜିଷ୍ଟ୍ରାର କାର୍ଯ୍ୟାଳୟ ଦ୍ୱାରା ଅନୁମୋଦିତ ଚାରିଟେବୁଲ ଟ୍ରଷ୍ଟ।"
+  },
+  {
+    id: "doc-2",
+    titleEn: "PAN Card",
+    titleHi: "पैन कार्ड (PAN Card)",
+    titleOr: "ପ୍ୟାନ୍‌ କାର୍ଡ (PAN Card)",
+    category: "tax",
+    docNumber: "AAATS0192K",
+    issueDate: "20 Feb 2024",
+    status: "active",
+    descriptionEn: "Income Tax Department, Government of India Permanent Account Number issued for Foundation.",
+    descriptionHi: "आयकर विभाग, भारत सरकार द्वारा जारी फाउंडेशन का स्थायी खाता संख्या (PAN)।",
+    descriptionOr: "ଆୟକର ବିଭାଗ, ଭାରତ ସରକାରଙ୍କ ଦ୍ୱାରା ପ୍ରଦତ୍ତ ପ୍ୟାନ୍‌ ନମ୍ବର।"
+  },
+  {
+    id: "doc-3",
+    titleEn: "12A Registration Certificate",
+    titleHi: "12A आयकर छूट प्रमाण पत्र",
+    titleOr: "୧୨A ଆୟକର ରିହାତି ପ୍ରମାଣପତ୍ର",
+    category: "tax",
+    docNumber: "12A/2024/SWF/4092",
+    issueDate: "05 Apr 2024",
+    status: "approved",
+    descriptionEn: "Income Tax Act 1961 Section 12A exemption recognition for non-profit operations.",
+    descriptionHi: "आयकर अधिनियम 1961 की धारा 12A के तहत गैर-लाभकारी संगठन मान्यता।",
+    descriptionOr: "୧୯୬୧ ଆୟକର ଅଧିନିୟମର ୧୨A ଧାରା ଅନୁଯାୟୀ ସରକାରୀ ସ୍ୱୀକୃତି।"
+  },
+  {
+    id: "doc-4",
+    titleEn: "80G Tax Exemption Certificate",
+    titleHi: "80G दान छूट प्रमाण पत्र",
+    titleOr: "୮୦G ଦାନ ଟ୍ୟାକ୍ସ ରିହାତି ପ୍ରମାଣପତ୍ର",
+    category: "tax",
+    docNumber: "80G/2024/SWF/9912",
+    issueDate: "18 Apr 2024",
+    status: "approved",
+    descriptionEn: "50% Income Tax exemption eligibility for donors under Section 80G of Income Tax Act.",
+    descriptionHi: "धारा 80G के तहत दानदाताओं के लिए 50% आयकर में छूट।",
+    descriptionOr: "ଦାତାମାନଙ୍କ ପାଇଁ ୮୦G ଧାରା ଅଧୀନରେ ୫୦% ଟ୍ୟାକ୍ସ ରିହାତି।"
+  },
+  {
+    id: "doc-5",
+    titleEn: "CSR Registration Approval",
+    titleHi: "सीएसआर (CSR) पंजीकरण दस्तावेज",
+    titleOr: "ସିଏସଆର (CSR) ସ୍ୱୀକୃତି ଦସ୍ତାବିଜ",
+    category: "csr",
+    docNumber: "CSR00081920",
+    issueDate: "10 May 2024",
+    status: "approved",
+    descriptionEn: "Ministry of Corporate Affairs (MCA) Form CSR-1 filing for corporate social responsibility grants.",
+    descriptionHi: "कॉर्पोरेट मामलों के मंत्रालय (MCA) द्वारा मान्यता प्राप्त CSR-1 फॉर्म स्वीकृति।",
+    descriptionOr: "କର୍ପୋରେଟ୍ ଅଫେୟାର୍ସ ମନ୍ତ୍ରଣାଳୟ (MCA) ଦ୍ୱାରା ସ୍ୱୀକୃତ CSR-1 ପଞ୍ଜୀକରଣ।"
+  },
+  {
+    id: "doc-6",
+    titleEn: "Annual Progress Report 2024-25",
+    titleHi: "वार्षिक प्रगति रिपोर्ट 2024-25",
+    titleOr: "ବାର୍ଷିକ କାର୍ଯ୍ୟାବଳୀ ରିପୋର୍ଟ ୨୦୨୪-୨୫",
+    category: "report",
+    docNumber: "AR/2024-25/BABUJANG",
+    issueDate: "31 Mar 2025",
+    status: "audited",
+    descriptionEn: "Comprehensive annual impact summary covering food drives, health camps, and student scholarships.",
+    descriptionHi: "भोजन वितरण, स्वास्थ्य शिविर और शिक्षा छात्रवृत्ति को कवर करने वाली विस्तृत वार्षिक रिपोर्ट।",
+    descriptionOr: "ଅନ୍ନଦାନ, ସ୍ୱାସ୍ଥ୍ୟ ଶିବିର ଓ ବସ୍ତ୍ରଦାନର ସମଗ୍ର ବାର୍ଷିକ ବିବରଣୀ।"
+  },
+  {
+    id: "doc-7",
+    titleEn: "Chartered Accountant Audit Report",
+    titleHi: "ऑडिट रिपोर्ट (C.A. Audited Accounts)",
+    titleOr: "ଅଡିଟ୍‌ ରିପୋର୍ଟ (ସୋସିଆଲ ୱେଲଫେର ଫାଉଣ୍ଡେସନ)",
+    category: "report",
+    docNumber: "CA/AUD/2024-25/0082",
+    issueDate: "20 May 2025",
+    status: "audited",
+    descriptionEn: "Independently audited balance sheet, income & expenditure statement, and utilization receipts.",
+    descriptionHi: "चार्टर्ड एकाउंटेंट द्वारा सत्यापित बैलेंस शीट और आय-व्यय का पूर्ण लेखा-जोखा।",
+    descriptionOr: "ସନ୍ନଦପ୍ରାପ୍ତ ହିସାବରକ୍ଷକ (C.A.) ଦ୍ୱାରା ଅଡିଟ୍ ହୋଇଥିବା ଆୟବ୍ୟୟ ହିସାବ।"
+  },
+  {
+    id: "doc-8",
+    titleEn: "FCRA Application Status",
+    titleHi: "एफसीआरए (FCRA) स्थिति",
+    titleOr: "ଏଫସିଆରଏ (FCRA) ଆବେଦନ ସ୍ଥିତି",
+    category: "fcra",
+    docNumber: "FCRA/APP/2024/7710",
+    issueDate: "Pending Review",
+    status: "under_process",
+    descriptionEn: "Foreign Contribution Regulation Act application currently under verification by Ministry of Home Affairs.",
+    descriptionHi: "विदेशी अंशदान (नियमन) अधिनियम आवेदन गृह मंत्रालय में सत्यापन प्रक्रियाधीन।",
+    descriptionOr: "ବୈଦେଶିକ ଅନୁଦାନ ନିୟମାବଳୀ (FCRA) ଆବେଦନ ଗୃହ ମନ୍ତ୍ରଣାଳୟରେ ଯାଞ୍ଚାଧୀନ।"
+  }
+];
+
+export const INITIAL_NEWS_EVENTS: NewsEventItem[] = [
+  {
+    id: "news-1",
+    titleEn: "Mass Food & Dry Ration Kit Distribution Drive Organized in Babujang",
+    titleHi: "बाबुजांग में विशाल भोजन और राशन किट वितरण कार्यक्रम आयोजित",
+    titleOr: "ବାବୁଜଙ୍ଗ ଗ୍ରାମରେ ବିଶାଳ ଅନ୍ନଦାନ ଓ ରାସନ ସାମଗ୍ରୀ ବଣ୍ଟନ ଶିବିର",
+    date: "15 August 2026",
+    category: "news",
+    location: "Babujang Panchayat Ground, Cuttack",
+    summaryEn: "Over 120 elderly persons and widowers received monthly groceries and hygiene packs on Independence Day.",
+    summaryHi: "स्वतंत्रता दिवस के अवसर पर 120 से अधिक बुजुर्गों और असहाय परिवारों को मासिक राशन किट प्रदान की गई।",
+    summaryOr: "ସ୍ୱାଧୀନତା ଦିବସ ଅବସରରେ ୧୨୦ ରୁ ଉର୍ଦ୍ଧ୍ୱ ନିଃସହାୟ ବୃଦ୍ଧବୃଦ୍ଧାଙ୍କୁ ମାସିକ ରାସନ କିଟ୍‌ ବଣ୍ଟନ।",
+    imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800",
+    isUpcoming: false
+  },
+  {
+    id: "news-2",
+    titleEn: "Upcoming Free Rural Medical Camp & Prescription Medicine Drive",
+    titleHi: "आगामी नि:शुल्क ग्रामीण स्वास्थ्य शिविर एवं दवा वितरण",
+    titleOr: "ଆଗାମୀ ମାଗଣା ଗ୍ରାମୀଣ ସ୍ୱାସ୍ଥ୍ୟ ଶିବିର ଓ ଔଷଧ ସହାୟତା",
+    date: "25 August 2026",
+    category: "event",
+    location: "Kishore Nagar Community Hall",
+    summaryEn: "Specialist doctors from Cuttack Medical College will conduct health screening and distribute free medicines.",
+    summaryHi: "कटक मेडिकल कॉलेज के विशेषज्ञ डॉक्टर मुफ्त स्वास्थ्य जांच करेंगे और दवाएं वितरित करेंगे।",
+    summaryOr: "କଟକ ବଡ଼ ଡାକ୍ତରଖାନାର ବିଶେଷଜ୍ଞ ଡାକ୍ତରଙ୍କ ଦ୍ୱାରା ମାଗଣା ସ୍ୱାସ୍ଥ୍ୟ ପରୀକ୍ଷା ଓ ଔଷଧ ବଣ୍ଟନ।",
+    imageUrl: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800",
+    isUpcoming: true
+  },
+  {
+    id: "news-3",
+    titleEn: "Press Release: Social Welfare Foundation Awarded Best Rural NGO in District",
+    titleHi: "प्रेस विज्ञप्ति: सोशल वेलफेयर फाउंडेशन जिला स्तर पर सम्मानित",
+    titleOr: "ପ୍ରେସ୍‌ ରିଲିଜ୍‌: କଟକ ଜିଲ୍ଲାର ଶ୍ରେଷ୍ଠ ସାମାଜିକ ଅନୁଷ୍ଠାନ ଭାବେ ସମ୍ମାନିତ",
+    date: "01 July 2026",
+    category: "press",
+    location: "District Headquarters, Cuttack",
+    summaryEn: "Recognized for exemplary emergency flood relief work and continuous destitute care during 2025-26.",
+    summaryHi: "बाढ़ राहत कार्य और ग्रामीण असहाय सेवा के लिए जिला प्रशासन द्वारा विशेष सम्मान।",
+    summaryOr: "ବନ୍ୟା ବିପନ୍ନଙ୍କ ସେବା ଓ ନିରନ୍ତର ଅନ୍ନଦାନ ପାଇଁ ଜିଲ୍ଲା ପ୍ରଶାସନ ଦ୍ୱାରା ସାଧୁବାଦ।",
+    imageUrl: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800",
+    isUpcoming: false
+  }
+];
+
 
 export const INITIAL_LEADERSHIP: OfficeBearer[] = [
   {

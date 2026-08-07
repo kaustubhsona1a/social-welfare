@@ -36,28 +36,34 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md overflow-y-auto animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto animate-fadeIn">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 my-auto max-h-[92vh] flex flex-col">
         
         {/* Header with Blue Gradient */}
-        <div className="bg-gradient-to-r from-sky-800 via-blue-900 to-indigo-950 text-white p-6 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-sky-800 via-blue-900 to-indigo-950 text-white p-5 sm:p-6 relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 w-48 h-48 bg-sky-400/20 rounded-full blur-2xl pointer-events-none" />
           
           <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-30 p-2 text-white/90 hover:text-white bg-white/20 hover:bg-white/35 active:scale-90 rounded-full transition-all shadow-sm focus:outline-none cursor-pointer"
+            aria-label="Close modal"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 sm:w-5 sm:h-5" />
           </button>
 
-          <div className="space-y-1 relative z-10">
-            <span className="text-[11px] uppercase tracking-widest font-mono text-sky-300 font-semibold">
+          <div className="space-y-1 relative z-10 pr-12">
+            <span className="text-[10px] sm:text-[11px] uppercase tracking-widest font-mono text-sky-300 font-semibold block">
               {currentLang === 'or' ? 'ଯୋଗାଯୋଗ କରନ୍ତୁ' : 'Direct Communication'}
             </span>
-            <h3 className="text-2xl font-light font-heading text-white">
+            <h3 className="text-xl sm:text-2xl font-light font-heading text-white leading-tight">
               {currentLang === 'or' ? 'ସୋସିଆଲ ୱେଲଫେର ଫାଉଣ୍ଡେସନ ସହ ଯୋଗାଯୋଗ' : 'Connect with Babujang Foundation'}
             </h3>
-            <p className="text-xs text-sky-100/90 font-light">
+            <p className="text-[11px] sm:text-xs text-sky-100/90 font-light">
               {currentLang === 'or' 
                 ? 'ବାବୁଜଙ୍ଗ, କଟକ କାର୍ଯ୍ୟାଳୟ ସହ ସିଧାସଳଖ ଆଲୋଚନା କରନ୍ତୁ' 
                 : 'Reach out to our leadership & team at Babujang, Cuttack'}
@@ -66,7 +72,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
           {submitted ? (
             <div className="py-8 text-center space-y-4">
               <div className="w-16 h-16 bg-sky-100 text-sky-700 rounded-full flex items-center justify-center mx-auto shadow-inner">

@@ -43,12 +43,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const navItems = [
-    { id: 'home', labelEn: 'Home', labelOr: 'ମୁଖ୍ୟ' },
-    { id: 'initiatives', labelEn: 'Initiatives & Our Work', labelOr: 'କାର୍ଯ୍ୟକ୍ରମ ଓ ସେବା' },
-    { id: 'leadership', labelEn: 'Leadership', labelOr: 'ନେତୃତ୍ୱ' },
-    { id: 'stories', labelEn: 'Donate & Impact', labelOr: 'ଦାନ ଓ ପ୍ରଭାବ' },
-    { id: 'gallery', labelEn: 'Gallery', labelOr: 'ଗ୍ୟାଲେରୀ' },
+    { id: 'home', labelEn: 'Home', labelHi: 'मुख्य पृष्ठ', labelOr: 'ମୁଖ୍ୟ' },
+    { id: 'about', labelEn: 'About Us', labelHi: 'हमारे बारे में', labelOr: 'ଆମ ବିଷୟରେ' },
+    { id: 'vision-mission', labelEn: 'Vision & Mission', labelHi: 'लक्ष्य एवं मिशन', labelOr: 'ଲକ୍ଷ୍ୟ ଓ ମିଶନ୍' },
+    { id: 'leadership', labelEn: 'Our Team', labelHi: 'हमारी टीम', labelOr: 'ଆମ ନେତୃତ୍ୱ' },
+    { id: 'initiatives', labelEn: 'Our Projects', labelHi: 'परियोजनाएं', labelOr: 'ଆମ ପ୍ରକଳ୍ପ' },
+    { id: 'gallery', labelEn: 'Gallery', labelHi: 'गैलरी', labelOr: 'ଗ୍ୟାଲେରୀ' },
+    { id: 'news-events', labelEn: 'News & Events', labelHi: 'समाचार एवं कार्यक्रम', labelOr: 'ଖବର ଓ କାର୍ଯ୍ୟକ୍ରମ' },
+    { id: 'volunteer', labelEn: 'Volunteer', labelHi: 'स्वयंसेवक', labelOr: 'ସ୍ୱେଚ୍ଛାସେବୀ' },
+    { id: 'stories', labelEn: 'Donate', labelHi: 'दान करें', labelOr: 'ଦାନ କରନ୍ତୁ' },
+    { id: 'csr', labelEn: 'CSR Partnership', labelHi: 'सीएसआर साझेदारी', labelOr: 'ସିଏସଆର' },
+    { id: 'transparency', labelEn: 'Transparency & Docs', labelHi: 'पारदर्शिता एवं दस्तावेज', labelOr: 'ସ୍ୱଚ୍ଛତା ଓ ଦସ୍ତାବିଜ' },
+    { id: 'contact', labelEn: 'Contact Us', labelHi: 'संपर्क करें', labelOr: 'ଯୋଗାଯୋଗ' },
   ];
+
+  const getNavLabel = (item: typeof navItems[0]) => {
+    if (currentLang === 'hi') return item.labelHi;
+    if (currentLang === 'or') return item.labelOr;
+    return item.labelEn;
+  };
 
   const handleNavClick = (id: string) => {
     setActiveSection(id);
@@ -116,44 +129,44 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Logo size={isScrolled ? "sm" : "md"} className="group-hover:scale-105 transition-transform shrink-0" />
 
-            <div className="flex flex-col min-w-0">
-              <span className="text-[13px] sm:text-base lg:text-lg font-extrabold text-emerald-700 uppercase tracking-wide group-hover:text-emerald-800 transition-colors leading-tight font-heading truncate">
-                {currentLang === 'or' ? FOUNDATION_INFO.nameOr : 'SOCIAL WELFARE FOUNDATION'}
+            <div className="flex flex-col min-w-0 max-w-[170px] min-[380px]:max-w-[210px] sm:max-w-none">
+              <span className="text-[11px] min-[380px]:text-xs sm:text-base lg:text-lg font-extrabold text-emerald-700 uppercase tracking-tight sm:tracking-wide group-hover:text-emerald-800 transition-colors leading-tight font-heading truncate">
+                {currentLang === 'hi' ? FOUNDATION_INFO.nameHi : currentLang === 'or' ? FOUNDATION_INFO.nameOr : FOUNDATION_INFO.nameEn}
               </span>
-              <span className="text-[10px] sm:text-[11px] font-light text-slate-500 flex items-center gap-1 pt-0.5 truncate">
+              <span className="text-[9px] min-[380px]:text-[10px] sm:text-[11px] font-light text-slate-500 flex items-center gap-1 pt-0.5 truncate">
                 <span className="truncate">Babujang, Cuttack</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-emerald-700 font-medium shrink-0">Community Trust</span>
+                <span className="text-emerald-700 font-medium shrink-0">Trust</span>
               </span>
             </div>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 bg-slate-100/80 p-1 rounded-full border border-slate-200/80">
+          <nav className="hidden lg:flex items-center gap-1 bg-slate-100/80 p-1 rounded-full border border-slate-200/80 overflow-x-auto max-w-2xl">
             {navItems.map((item) => {
               const isActive = activeSection === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-all ${
                     isActive 
                       ? 'bg-emerald-700 text-white shadow-2xs' 
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/90'
                   }`}
                 >
-                  {currentLang === 'or' ? item.labelOr : item.labelEn}
+                  {getNavLabel(item)}
                 </button>
               );
             })}
           </nav>
 
           {/* Right Action Controls */}
-          <div className="hidden md:flex items-center gap-2.5">
+          <div className="hidden md:flex items-center gap-2">
             {onOpenOperatorPanel && (
               <button
                 onClick={onOpenOperatorPanel}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50/90 hover:bg-emerald-100 text-emerald-900 text-xs font-medium transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50/90 hover:bg-emerald-100 text-emerald-900 text-xs font-medium transition-all shrink-0"
                 title="Open Foundation Operator & Image Upload Panel"
               >
                 <Camera className="w-3.5 h-3.5 text-emerald-600" />
@@ -161,14 +174,27 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            <button
-              onClick={() => onLanguageChange(currentLang === 'en' ? 'or' : 'en')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-sky-200 bg-sky-50/80 hover:bg-sky-100 text-sky-900 text-xs font-medium transition-all"
-              title="Toggle English / Odia"
-            >
-              <Globe className="w-3.5 h-3.5 text-sky-700" />
-              <span>{currentLang === 'en' ? 'ଓଡ଼ିଆ' : 'English'}</span>
-            </button>
+            {/* 3-Language Toggle */}
+            <div className="flex items-center bg-sky-50 border border-sky-200 rounded-full p-0.5 text-xs font-semibold shrink-0">
+              <button
+                onClick={() => onLanguageChange('en')}
+                className={`px-2.5 py-1 rounded-full transition-all ${currentLang === 'en' ? 'bg-sky-700 text-white shadow-2xs' : 'text-sky-900 hover:bg-sky-100'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => onLanguageChange('hi')}
+                className={`px-2.5 py-1 rounded-full transition-all ${currentLang === 'hi' ? 'bg-sky-700 text-white shadow-2xs' : 'text-sky-900 hover:bg-sky-100'}`}
+              >
+                हिंदी
+              </button>
+              <button
+                onClick={() => onLanguageChange('or')}
+                className={`px-2.5 py-1 rounded-full transition-all ${currentLang === 'or' ? 'bg-sky-700 text-white shadow-2xs' : 'text-sky-900 hover:bg-sky-100'}`}
+              >
+                ଓଡ଼ିଆ
+              </button>
+            </div>
 
             <button
               onClick={onOpenContactModal}
@@ -180,13 +206,27 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Mobile Navigation Toggle */}
-          <div className="flex items-center gap-2 md:hidden">
-            <button
-              onClick={() => onLanguageChange(currentLang === 'en' ? 'or' : 'en')}
-              className="px-2.5 py-1.5 rounded-full bg-sky-100 text-sky-900 text-xs font-light border border-sky-200"
-            >
-              {currentLang === 'en' ? 'ଓଡ଼ିଆ' : 'EN'}
-            </button>
+          <div className="flex items-center gap-1.5 md:hidden">
+            <div className="flex items-center bg-sky-50 border border-sky-200 rounded-full p-0.5 text-[10px] font-bold">
+              <button
+                onClick={() => onLanguageChange('en')}
+                className={`px-2 py-0.5 rounded-full ${currentLang === 'en' ? 'bg-sky-700 text-white' : 'text-sky-900'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => onLanguageChange('hi')}
+                className={`px-2 py-0.5 rounded-full ${currentLang === 'hi' ? 'bg-sky-700 text-white' : 'text-sky-900'}`}
+              >
+                हि
+              </button>
+              <button
+                onClick={() => onLanguageChange('or')}
+                className={`px-2 py-0.5 rounded-full ${currentLang === 'or' ? 'bg-sky-700 text-white' : 'text-sky-900'}`}
+              >
+                ଓଡ଼ି
+              </button>
+            </div>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -207,13 +247,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`text-left px-3.5 py-2.5 rounded-2xl text-xs font-light transition-colors ${
+                className={`text-left px-3.5 py-2.5 rounded-2xl text-xs font-medium transition-colors ${
                   activeSection === item.id 
-                    ? 'text-sky-900 bg-sky-50 font-normal border border-sky-200' 
+                    ? 'text-sky-900 bg-sky-50 font-bold border border-sky-200' 
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                {currentLang === 'or' ? item.labelOr : item.labelEn}
+                {getNavLabel(item)}
               </button>
             ))}
           </div>

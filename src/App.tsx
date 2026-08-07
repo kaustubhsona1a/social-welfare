@@ -5,10 +5,15 @@ import { FoundationRepository } from './lib/supabase';
 // Components
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { AboutAndVision } from './components/AboutAndVision';
 import { InitiativesAndWork } from './components/InitiativesAndWork';
 import { LeadershipSection } from './components/LeadershipSection';
 import { DonateAndImpact } from './components/DonateAndImpact';
 import { GallerySection } from './components/GallerySection';
+import { NewsAndEventsSection } from './components/NewsAndEventsSection';
+import { VolunteerAndCSRSection } from './components/VolunteerAndCSRSection';
+import { TransparencySection } from './components/TransparencySection';
+import { ContactSection } from './components/ContactSection';
 import { ContactModal } from './components/ContactModal';
 import { SupabaseModal } from './components/SupabaseModal';
 import { OperatorPanel } from './components/OperatorPanel';
@@ -77,36 +82,51 @@ export default function App() {
           currentLang={currentLang}
           onOpenContactModal={() => setIsContactOpen(true)}
           onExploreWork={() => {
-            const el = document.getElementById('initiatives');
+            const el = document.getElementById('about');
             if (el) el.scrollIntoView({ behavior: 'smooth' });
           }}
         />
 
-        {/* Initiatives & Our Work (Consolidated Section) */}
+        {/* About Us & Vision & Mission */}
+        <AboutAndVision currentLang={currentLang} />
+
+        {/* Initiatives & Our Work (Projects) */}
         <InitiativesAndWork
           drives={drives}
           currentLang={currentLang}
           onOpenContactModal={() => setIsContactOpen(true)}
         />
 
-        {/* Leadership & Office Bearers Section */}
+        {/* Leadership & Office Bearers (Our Team) */}
         <LeadershipSection
           leadership={leadership}
           currentLang={currentLang}
         />
 
-        {/* Donate & Impact (Integrated Payment Portal + Success Stories) */}
+        {/* Activity & Media Gallery */}
+        <GallerySection
+          items={gallery}
+          currentLang={currentLang}
+        />
+
+        {/* News & Events & Media */}
+        <NewsAndEventsSection currentLang={currentLang} />
+
+        {/* Donate & Impact Section (UPI Barcode, Bank Details, Success Stories) */}
         <DonateAndImpact
           stories={stories}
           currentLang={currentLang}
           onOpenContactModal={() => setIsContactOpen(true)}
         />
 
-        {/* Activity & Photo Gallery */}
-        <GallerySection
-          items={gallery}
-          currentLang={currentLang}
-        />
+        {/* Volunteer Joining & Corporate CSR Partnership */}
+        <VolunteerAndCSRSection currentLang={currentLang} />
+
+        {/* Documents Folder & Legal Transparency (12A, 80G, PAN, Trust Reg, Audit) */}
+        <TransparencySection currentLang={currentLang} />
+
+        {/* Contact Page Section (Address, Map, Email, Phone, WhatsApp, Form) */}
+        <ContactSection currentLang={currentLang} />
       </main>
 
       {/* Footer */}

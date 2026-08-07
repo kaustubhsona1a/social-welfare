@@ -1,13 +1,16 @@
-export type Language = 'en' | 'or';
+export type Language = 'en' | 'hi' | 'or';
 
 export interface OfficeBearer {
   id: string;
   nameEn: string;
+  nameHi?: string;
   nameOr: string;
   roleEn: string;
+  roleHi?: string;
   roleOr: string;
   category: 'executive' | 'advisory' | 'trustee';
   bioEn: string;
+  bioHi?: string;
   bioOr: string;
   phone?: string;
   imageUrl: string;
@@ -16,9 +19,11 @@ export interface OfficeBearer {
 export interface DonationDrive {
   id: string;
   titleEn: string;
+  titleHi?: string;
   titleOr: string;
   category: 'food' | 'clothing' | 'medical' | 'financial' | 'education';
   descriptionEn: string;
+  descriptionHi?: string;
   descriptionOr: string;
   targetAmount: number;
   raisedAmount: number;
@@ -32,13 +37,16 @@ export interface DonationDrive {
 export interface SuccessStory {
   id: string;
   titleEn: string;
+  titleHi?: string;
   titleOr: string;
   category: string;
   location: string;
   date: string;
   summaryEn: string;
+  summaryHi?: string;
   summaryOr: string;
   fullStoryEn: string;
+  fullStoryHi?: string;
   fullStoryOr: string;
   beneficiariesCount: number;
   imageUrl: string;
@@ -51,11 +59,44 @@ export interface SuccessStory {
 export interface GalleryItem {
   id: string;
   titleEn: string;
+  titleHi?: string;
   titleOr: string;
-  category: 'food' | 'clothing' | 'medical' | 'event' | 'community';
+  category: 'food' | 'clothing' | 'medical' | 'event' | 'community' | 'video' | 'press';
   date: string;
   imageUrl: string;
   location: string;
+  mediaType?: 'photo' | 'video' | 'press';
+  videoUrl?: string;
+}
+
+export interface TransparencyDocument {
+  id: string;
+  titleEn: string;
+  titleHi: string;
+  titleOr: string;
+  category: 'registration' | 'tax' | 'csr' | 'report' | 'fcra';
+  docNumber?: string;
+  issueDate?: string;
+  status: 'active' | 'approved' | 'under_process' | 'audited';
+  fileUrl?: string;
+  descriptionEn: string;
+  descriptionHi: string;
+  descriptionOr: string;
+}
+
+export interface NewsEventItem {
+  id: string;
+  titleEn: string;
+  titleHi: string;
+  titleOr: string;
+  date: string;
+  category: 'news' | 'event' | 'press';
+  location: string;
+  summaryEn: string;
+  summaryHi: string;
+  summaryOr: string;
+  imageUrl: string;
+  isUpcoming?: boolean;
 }
 
 export interface AssistanceRequest {
@@ -93,4 +134,5 @@ export interface PaymentInfo {
   bankName: string;
   accountHolder: string;
 }
+
 

@@ -68,14 +68,17 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
   // --- BRANDING & BACKGROUND STATE ---
-  const [heroBgPreview, setHeroBgPreview] = useState<string | null>(FoundationRepository.getHeroBg());
+  const [desktopBgPreview, setDesktopBgPreview] = useState<string | null>(FoundationRepository.getDesktopHeroBg());
+  const [mobileBgPreview, setMobileBgPreview] = useState<string | null>(FoundationRepository.getMobileHeroBg());
+  const [galleryTick, setGalleryTick] = useState(0);
 
   // --- PAYMENT & UPI BARCODE STATE ---
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>(() => FoundationRepository.getPaymentInfo());
 
   // File Refs
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const heroBgInputRef = useRef<HTMLInputElement>(null);
+  const desktopBgInputRef = useRef<HTMLInputElement>(null);
+  const mobileBgInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const leaderPhotoInputRef = useRef<HTMLInputElement>(null);
   const drivePhotoInputRef = useRef<HTMLInputElement>(null);
@@ -157,8 +160,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
       setUploading(true);
       try {
         const imageUrl = await FoundationRepository.uploadImage(file, 'backgrounds');
-        await FoundationRepository.saveHeroBg(imageUrl);
-        setHeroBgPreview(imageUrl);
+        await FoundationRepository.saveDesktopHeroBg(imageUrl);
+        setDesktopBgPreview(imageUrl);
         notify('Home background image updated!');
       } catch (err: any) {
         alert(`Hero background upload failed: ${err?.message || 'Error'}`);
@@ -170,8 +173,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
 
   const handleResetHeroBg = async () => {
     if (window.confirm('Reset home background to default gradient?')) {
-      await FoundationRepository.saveHeroBg('');
-      setHeroBgPreview(null);
+      await FoundationRepository.saveDesktopHeroBg('');
+      setDesktopBgPreview(null);
       notify('Home background reset to default.');
     }
   };
@@ -393,7 +396,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
       setUploading(true);
       await FoundationRepository.deleteGalleryItem(id);
       setUploading(false);
-      notify('Photo deleted.');
+      setGalleryTick(prev => prev + 1);
+      notify('Photo deleted successfully.');
     }
   };
 
@@ -417,8 +421,14 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           </div>
 
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+            aria-label="Close Operator Panel"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1278,61 +1288,101 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
               </div>
 
               {/* Home Page Background Image Upload Card */}
-              <div className="bg-white p-5 rounded-xl border border-emerald-200 shadow-2xs space-y-3">
+              <div className="bg-white p-5 rounded-xl border border-emerald-200 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b pb-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 text-emerald-600" />
-                    <span>Home Page Hero Background Image</span>
+                    <span>Home Page Hero Backgrounds (Laptop vs Mobile)</span>
                   </h4>
-                  {heroBgPreview && (
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      Custom Active ✓
-                    </span>
-                  )}
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Liquid Glass Ready
+                  </span>
                 </div>
 
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Upload a high-resolution background photo for the Home page hero section. When visitors scroll down, the background image smoothly diffuses with a Liquid Glass backdrop blur effect!
+                  You can set different background photos for Laptop/Desktop screens and Mobile screens so the hero image looks perfectly fitted on both!
                 </p>
 
-                {heroBgPreview && (
-                  <div className="relative rounded-xl overflow-hidden border border-slate-200 h-32 bg-slate-900 group">
-                    <img src={heroBgPreview} alt="Hero Background Preview" className="w-full h-full object-cover opacity-80" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-3">
-                      <span className="text-white text-xs font-medium">Liquid Glass Scroll Background Active</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 pt-1">
-                  <input
-                    type="file"
-                    ref={heroBgInputRef}
-                    onChange={handleHeroBgUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => heroBgInputRef.current?.click()}
-                    disabled={uploading}
-                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg inline-flex items-center gap-2 shadow-2xs"
-                  >
-                    <Camera className="w-4 h-4 text-emerald-200" />
-                    <span>{heroBgPreview ? 'Change Home Background' : 'Upload Home Background Image'}</span>
-                  </button>
-
-                  {heroBgPreview && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Laptop / Desktop Background */}
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                    <span className="text-xs font-bold text-slate-800 block">💻 Laptop / Desktop Background</span>
+                    {desktopBgPreview ? (
+                      <div className="relative rounded-lg overflow-hidden border border-slate-300 h-28 bg-slate-900">
+                        <img src={desktopBgPreview} alt="Desktop Hero Background" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="h-28 bg-slate-200/80 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-500 text-xs">
+                        Default Stock Hero Active
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={desktopBgInputRef}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setUploading(true);
+                          const url = await FoundationRepository.uploadImage(file, 'branding');
+                          await FoundationRepository.saveDesktopHeroBg(url);
+                          setDesktopBgPreview(url);
+                          setUploading(false);
+                          notify('Laptop background image updated!');
+                        }
+                      }}
+                      accept="image/*"
+                      className="hidden"
+                    />
                     <button
                       type="button"
-                      onClick={handleResetHeroBg}
+                      onClick={() => desktopBgInputRef.current?.click()}
                       disabled={uploading}
-                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5"
+                      className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5"
                     >
-                      <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Remove / Reset Background</span>
+                      <Camera className="w-3.5 h-3.5 text-emerald-200" />
+                      <span>{desktopBgPreview ? 'Change Laptop BG' : 'Upload Laptop BG'}</span>
                     </button>
-                  )}
+                  </div>
+
+                  {/* Mobile Screen Background */}
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                    <span className="text-xs font-bold text-slate-800 block">📱 Mobile Screen Background</span>
+                    {mobileBgPreview ? (
+                      <div className="relative rounded-lg overflow-hidden border border-slate-300 h-28 bg-slate-900">
+                        <img src={mobileBgPreview} alt="Mobile Hero Background" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="h-28 bg-slate-200/80 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-500 text-xs">
+                        Same as Laptop BG
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={mobileBgInputRef}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setUploading(true);
+                          const url = await FoundationRepository.uploadImage(file, 'branding');
+                          await FoundationRepository.saveMobileHeroBg(url);
+                          setMobileBgPreview(url);
+                          setUploading(false);
+                          notify('Mobile background image updated!');
+                        }
+                      }}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => mobileBgInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full py-2 bg-sky-700 hover:bg-sky-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-sky-200" />
+                      <span>{mobileBgPreview ? 'Change Mobile BG' : 'Upload Mobile BG'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 

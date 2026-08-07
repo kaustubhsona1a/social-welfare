@@ -34,6 +34,29 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  const lastTapTimeRef = React.useRef<number>(0);
+  const tapCountRef = React.useRef<number>(0);
+
+  const handleTripleTap = (e: React.MouseEvent | React.TouchEvent) => {
+    const now = Date.now();
+    if (now - lastTapTimeRef.current < 30) return; // ignore duplicate click right after touchend
+
+    if (now - lastTapTimeRef.current < 550) {
+      tapCountRef.current += 1;
+    } else {
+      tapCountRef.current = 1;
+    }
+    lastTapTimeRef.current = now;
+
+    const detail = 'detail' in e ? (e as React.MouseEvent).detail : 0;
+    if (tapCountRef.current >= 3 || detail >= 3) {
+      tapCountRef.current = 0;
+      if (onOpenOperatorPanel) {
+        onOpenOperatorPanel();
+      }
+    }
+  };
+
   React.useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -84,13 +107,10 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="bg-slate-900 text-slate-300 py-1 px-3 sm:px-4 text-[10px] sm:text-[11px] font-light border-b border-slate-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           <div 
-            onClick={(e) => {
-              if (e.detail === 3 && onOpenOperatorPanel) {
-                onOpenOperatorPanel();
-              }
-            }}
-            className="flex items-center gap-1.5 text-sky-300 min-w-0 cursor-pointer select-none"
-            title="Triple click for Operator Panel (Or press Ctrl+Shift+O)"
+            onClick={handleTripleTap}
+            onTouchEnd={handleTripleTap}
+            className="flex items-center gap-1.5 text-sky-300 min-w-0 cursor-pointer select-none active:opacity-80"
+            title="Triple tap for Operator Panel (Or press Ctrl+Shift+O)"
           >
             <FileCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-sky-400 shrink-0" />
             <span className="truncate">Govt Reg: <strong className="font-mono text-white font-normal">{FOUNDATION_INFO.regNo}</strong></span>

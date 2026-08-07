@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { OfficeBearer, Language } from '../types';
+import { getOdiaName, getOdiaRole } from '../lib/odiaTranslator';
 import { 
   Users, 
   Phone, 
@@ -108,20 +109,18 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({
                 <div className="absolute top-4 left-4">
                   <span className="bg-sky-950/80 backdrop-blur-md text-sky-200 text-[10px] font-mono px-3.5 py-1 rounded-full flex items-center gap-1.5 uppercase tracking-wider border border-sky-500/30">
                     <UserCheck className="w-3.5 h-3.5 text-sky-300" />
-                    {currentLang === 'or' ? (member.roleOr || member.roleEn) : member.roleEn}
+                    {currentLang === 'or' ? getOdiaRole(member.roleEn, member.roleOr) : member.roleEn}
                   </span>
                 </div>
 
                 {/* Name Overlay on Photo */}
                 <div className="absolute bottom-4 left-4 right-4 text-white space-y-0.5">
                   <h3 className="text-xl font-normal leading-snug drop-shadow-md font-heading">
-                    {currentLang === 'or' ? (member.nameOr || member.nameEn) : member.nameEn}
+                    {currentLang === 'or' ? getOdiaName(member.nameEn, member.nameOr) : member.nameEn}
                   </h3>
-                  {member.nameOr && member.nameOr !== member.nameEn && (
-                    <p className="text-xs text-sky-300 font-light font-mono">
-                      {currentLang === 'or' ? member.nameEn : member.nameOr}
-                    </p>
-                  )}
+                  <p className="text-xs text-sky-300 font-light font-mono">
+                    {currentLang === 'or' ? member.nameEn : getOdiaName(member.nameEn, member.nameOr)}
+                  </p>
                 </div>
               </div>
 

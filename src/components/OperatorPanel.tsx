@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { FoundationRepository, isSupabaseConfigured, SUPABASE_SQL_SCHEMA } from '../lib/supabase';
 import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest, PaymentInfo } from '../types';
+import { transliterateNameToOdia, translateDesignationToOdia, hasOdiaScript } from '../lib/odiaTranslator';
 
 interface OperatorPanelProps {
   isOpen: boolean;
@@ -204,7 +205,23 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const handleSaveLeaderEdit = async () => {
     if (!editingLeaderId) return;
     setUploading(true);
-    await FoundationRepository.saveLeadershipMember(editLeaderData as OfficeBearer);
+
+    const nameEn = editLeaderData.nameEn || '';
+    const roleEn = editLeaderData.roleEn || '';
+
+    const updatedLeader: OfficeBearer = {
+      ...(editLeaderData as OfficeBearer),
+      nameEn,
+      roleEn,
+      nameOr: editLeaderData.nameOr && hasOdiaScript(editLeaderData.nameOr) 
+        ? editLeaderData.nameOr 
+        : transliterateNameToOdia(nameEn),
+      roleOr: editLeaderData.roleOr && hasOdiaScript(editLeaderData.roleOr)
+        ? editLeaderData.roleOr 
+        : translateDesignationToOdia(roleEn),
+    };
+
+    await FoundationRepository.saveLeadershipMember(updatedLeader);
     setUploading(false);
     setEditingLeaderId(null);
     notify('Leader saved successfully!');
@@ -228,9 +245,9 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     const newMember: OfficeBearer = {
       id: 'leader-' + Date.now(),
       nameEn: newLeaderNameEn,
-      nameOr: newLeaderNameOr || newLeaderNameEn,
+      nameOr: newLeaderNameOr && hasOdiaScript(newLeaderNameOr) ? newLeaderNameOr : transliterateNameToOdia(newLeaderNameEn),
       roleEn: newLeaderRoleEn,
-      roleOr: newLeaderRoleOr || newLeaderRoleEn,
+      roleOr: newLeaderRoleOr && hasOdiaScript(newLeaderRoleOr) ? newLeaderRoleOr : translateDesignationToOdia(newLeaderRoleEn),
       category: newLeaderCategory,
       imageUrl: defaultImg,
       phone: newLeaderPhone || '9777085775',
@@ -648,20 +665,32 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600">Full Name</label>
+                            <label className="block text-[11px] font-medium text-slate-600">Full Name (English)</label>
                             <input
                               type="text"
                               value={editLeaderData.nameEn || ''}
-                              onChange={e => setEditLeaderData({ ...editLeaderData, nameEn: e.target.value, nameOr: editLeaderData.nameOr || e.target.value })}
+                              onChange={e => setEditLeaderData({ 
+                                ...editLeaderData, 
+                                nameEn: e.target.value, 
+                                nameOr: (editLeaderData.nameOr && hasOdiaScript(editLeaderData.nameOr)) 
+                                  ? editLeaderData.nameOr 
+                                  : transliterateNameToOdia(e.target.value) 
+                              })}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600">Designation / Role</label>
+                            <label className="block text-[11px] font-medium text-slate-600">Designation / Role (English)</label>
                             <input
                               type="text"
                               value={editLeaderData.roleEn || ''}
-                              onChange={e => setEditLeaderData({ ...editLeaderData, roleEn: e.target.value, roleOr: editLeaderData.roleOr || e.target.value })}
+                              onChange={e => setEditLeaderData({ 
+                                ...editLeaderData, 
+                                roleEn: e.target.value, 
+                                roleOr: (editLeaderData.roleOr && hasOdiaScript(editLeaderData.roleOr)) 
+                                  ? editLeaderData.roleOr 
+                                  : translateDesignationToOdia(e.target.value) 
+                              })}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
                           </div>

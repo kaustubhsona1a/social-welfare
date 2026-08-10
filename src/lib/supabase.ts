@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { transliterateNameToOdia } from './odiaTranslator';
 import { 
   FOUNDATION_INFO, 
   INITIAL_DRIVES, 
@@ -478,15 +479,34 @@ export class FoundationRepository {
   // Leadership
   static getLeadership(): OfficeBearer[] {
     const cached = localStorage.getItem(STORAGE_KEYS.LEADERSHIP);
-    if (!cached) {
-      localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(INITIAL_LEADERSHIP));
-      return INITIAL_LEADERSHIP;
+    let list: OfficeBearer[] = INITIAL_LEADERSHIP;
+    if (cached) {
+      try {
+        list = JSON.parse(cached);
+      } catch {
+        list = INITIAL_LEADERSHIP;
+      }
     }
-    try {
-      return JSON.parse(cached);
-    } catch {
-      return INITIAL_LEADERSHIP;
+
+    // Sanitize stale mock data or mismatching Odia names
+    let modified = false;
+    list = list.map(l => {
+      let updated = { ...l };
+      if (l.nameEn === 'Santosh Kumar Swain') {
+        updated.nameEn = 'Ejaz Khan';
+        updated.nameOr = 'ଏଜାଜ ଖାନ';
+        modified = true;
+      } else if (l.nameOr && l.nameOr.includes('ସନ୍ତୋଷ') && !l.nameEn.toLowerCase().includes('santosh')) {
+        updated.nameOr = transliterateNameToOdia(l.nameEn);
+        modified = true;
+      }
+      return updated;
+    });
+
+    if (modified || !cached) {
+      localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
     }
+    return list;
   }
 
   static async saveLeadershipMember(bearer: OfficeBearer): Promise<OfficeBearer> {

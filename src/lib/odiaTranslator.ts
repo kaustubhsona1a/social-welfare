@@ -63,6 +63,32 @@ const HONORIFICS_MAP: Record<string, string> = {
 };
 
 const NAME_DICTIONARY: Record<string, string> = {
+  // Common Muslim and Non-Hindu First/Last Names in Odisha
+  'ejaz': 'ଏଜାଜ',
+  'ejaj': 'ଏଜାଜ',
+  'khan': 'ଖାନ',
+  'mohammad': 'ମହମ୍ମଦ',
+  'mohammed': 'ମହମ୍ମଦ',
+  'md': 'ମହମ୍ମଦ',
+  'sk': 'ଶେଖ',
+  'sekh': 'ଶେଖ',
+  'sheikh': 'ଶେଖ',
+  'shekh': 'ଶେଖ',
+  'ahmed': 'ଅହମ୍ମଦ',
+  'ahmad': 'ଅହମ୍ମଦ',
+  'ali': 'ଅଲ୍ଲୀ',
+  'hussain': 'ହୁସେନ',
+  'husain': 'ହୁସେନ',
+  'alam': 'ଆଲାମ',
+  'rehman': 'ରେହମାନ',
+  'rahman': 'ରେହମାନ',
+  'imran': 'ଇମ୍ରାନ',
+  'salman': 'ସଲମାନ',
+  'aslam': 'ଅସଲମ',
+  'imtiaz': 'ଇମତିଆଜ',
+  'tariq': 'ତାରିକ',
+  'parvez': 'ପରଭେଜ',
+
   // First/Middle Names
   'ramesh': 'ରମେଶ',
   'suresh': 'ସୁରେଶ',
@@ -387,11 +413,22 @@ export function transliterateNameToOdia(nameEn?: string): string {
   return translatedParts.join(' ');
 }
 
-/** Helper to get Odia Name - uses provided nameOr if in Odia script, else transliterates nameEn */
+/** Helper to get Odia Name - uses provided nameOr if in Odia script and matching, else transliterates nameEn */
 export function getOdiaName(nameEn?: string, nameOr?: string): string {
+  if (!nameEn) return nameOr || 'ସେବାବ୍ରତୀ';
+
   if (nameOr && hasOdiaScript(nameOr)) {
-    return nameOr;
+    const lowerEn = nameEn.toLowerCase();
+    // Guard against stale mock names from initial database state
+    const isSantoshStale = nameOr.includes('ସନ୍ତୋଷ') && !lowerEn.includes('santosh');
+    const isPradiptaStale = nameOr.includes('ପ୍ରଦୀପ୍ତ') && !lowerEn.includes('pradipta');
+    const isDebendraStale = nameOr.includes('ଦେବେନ୍ଦ୍ର') && !lowerEn.includes('debendra');
+
+    if (!isSantoshStale && !isPradiptaStale && !isDebendraStale) {
+      return nameOr;
+    }
   }
+
   return transliterateNameToOdia(nameEn);
 }
 

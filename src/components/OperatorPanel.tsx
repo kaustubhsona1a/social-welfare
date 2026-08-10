@@ -1180,18 +1180,27 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
               </form>
 
               {/* Gallery Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {galleryItems.map(item => (
-                  <div key={item.id} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-square">
+                  <div key={item.id} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-square shadow-2xs">
                     <img src={item.imageUrl} alt={item.titleEn} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between text-white text-[11px]">
-                      <span className="truncate font-medium">{item.titleEn}</span>
-                      <button
-                        onClick={() => handleDeleteGallery(item.id)}
-                        className="self-end p-1.5 bg-red-600 hover:bg-red-700 rounded-md text-white"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    
+                    {/* ALWAYS VISIBLE Delete Button at Top Right for easy tapping on Mobile & Desktop */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteGallery(item.id);
+                      }}
+                      className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full shadow-md z-20 flex items-center justify-center transition-transform"
+                      title="Delete Photo"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+
+                    {/* Bottom Caption Bar */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-2 pt-4 text-white text-[11px] font-medium truncate">
+                      {item.titleEn}
                     </div>
                   </div>
                 ))}

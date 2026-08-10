@@ -69,12 +69,12 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
         </div>
 
         {/* Gallery Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {filteredItems.map((item) => (
             <div 
               key={item.id}
               onClick={() => setActiveImage(item)}
-              className="group relative h-72 bg-slate-900 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-sky-100/80 hover:-translate-y-0.5"
+              className="group relative h-48 sm:h-64 lg:h-72 bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer border border-sky-100/80 hover:-translate-y-0.5"
             >
               <img 
                 src={item.imageUrl} 
@@ -85,25 +85,23 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
 
               {/* Top Zoom Button */}
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="p-2.5 bg-slate-900/80 backdrop-blur-md rounded-full text-white inline-block border border-white/20">
-                  <Maximize2 className="w-4 h-4 text-sky-200" />
+              <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="p-1.5 sm:p-2.5 bg-slate-900/80 backdrop-blur-md rounded-full text-white inline-block border border-white/20">
+                  <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-200" />
                 </span>
               </div>
 
               {/* Bottom Caption */}
-              <div className="absolute bottom-4 left-4 right-4 text-white space-y-1">
-                <span className="bg-sky-950/80 text-sky-200 text-[10px] font-mono px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-sky-500/30 inline-block">
+              <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 text-white space-y-0.5 sm:space-y-1">
+                <span className="bg-sky-950/80 text-sky-200 text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full uppercase tracking-wider border border-sky-500/30 inline-block">
                   {item.category}
                 </span>
-                <h3 className="text-base font-normal leading-snug drop-shadow-md font-heading">
+                <h3 className="text-xs sm:text-base font-normal leading-snug drop-shadow-md font-heading line-clamp-1 sm:line-clamp-none">
                   {currentLang === 'or' ? item.titleOr : item.titleEn}
                 </h3>
-                <p className="text-[11px] text-sky-200 font-mono font-light flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-sky-300" />
-                  <span>{item.location}</span>
-                  <span>•</span>
-                  <span>{item.date}</span>
+                <p className="text-[10px] sm:text-[11px] text-sky-200 font-mono font-light flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-sky-300 shrink-0" />
+                  <span className="truncate">{item.location}</span>
                 </p>
               </div>
             </div>

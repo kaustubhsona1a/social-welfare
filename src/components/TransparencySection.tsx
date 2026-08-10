@@ -80,33 +80,33 @@ export const TransparencySection: React.FC<TransparencySectionProps> = ({ curren
         </div>
 
         {/* Quick Reference Summary Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10 p-4 bg-slate-800/80 rounded-2xl border border-slate-700/80 backdrop-blur-md text-xs">
-          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-10 p-3 sm:p-4 bg-slate-800/80 rounded-2xl border border-slate-700/80 backdrop-blur-md text-xs">
+          <div className="p-2.5 sm:p-3 bg-slate-900/60 rounded-xl border border-slate-700">
             <span className="text-slate-400 block text-[10px]">Trust Reg No:</span>
-            <strong className="text-emerald-300 font-mono text-sm">40762401394</strong>
+            <strong className="text-emerald-300 font-mono text-xs sm:text-sm break-all">40762401394</strong>
           </div>
-          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700">
+          <div className="p-2.5 sm:p-3 bg-slate-900/60 rounded-xl border border-slate-700">
             <span className="text-slate-400 block text-[10px]">PAN Card:</span>
-            <strong className="text-sky-300 font-mono text-sm">AAATS0192K</strong>
+            <strong className="text-sky-300 font-mono text-xs sm:text-sm">AAATS0192K</strong>
           </div>
-          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700">
+          <div className="p-2.5 sm:p-3 bg-slate-900/60 rounded-xl border border-slate-700">
             <span className="text-slate-400 block text-[10px]">12A & 80G:</span>
-            <strong className="text-amber-300 font-mono text-sm">Approved (50% Tax Relief)</strong>
+            <strong className="text-amber-300 font-mono text-xs sm:text-sm">Approved (50% Tax Relief)</strong>
           </div>
-          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700">
+          <div className="p-2.5 sm:p-3 bg-slate-900/60 rounded-xl border border-slate-700">
             <span className="text-slate-400 block text-[10px]">CSR Registration:</span>
-            <strong className="text-purple-300 font-mono text-sm">CSR00081920</strong>
+            <strong className="text-purple-300 font-mono text-xs sm:text-sm">CSR00081920</strong>
           </div>
         </div>
 
         {/* Documents Folder Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {documents.map(doc => {
             const badge = getCategoryBadge(doc.category);
             return (
               <div 
                 key={doc.id}
-                className="bg-slate-800/90 hover:bg-slate-800 rounded-2xl border border-slate-700 p-5 flex flex-col justify-between transition-all hover:border-emerald-500/50 hover:shadow-xl group"
+                className="bg-slate-800/90 hover:bg-slate-800 rounded-2xl border border-slate-700 p-4 sm:p-5 flex flex-col justify-between transition-all hover:border-emerald-500/50 hover:shadow-xl group"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">

@@ -95,47 +95,47 @@ export const AboutAndVision: React.FC<AboutAndVisionProps> = ({ currentLang }) =
         </div>
 
         {/* Grid: Story & Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-16">
-          <div className="lg:col-span-7 space-y-5 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-3 text-emerald-700 font-bold text-lg font-heading">
-              <Compass className="w-5 h-5 text-emerald-600" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center mb-16">
+          <div className="lg:col-span-7 space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs">
+            <div className="flex items-center gap-2.5 text-emerald-700 font-bold text-base sm:text-lg font-heading">
+              <Compass className="w-5 h-5 text-emerald-600 shrink-0" />
               <span>
                 {currentLang === 'hi' ? 'स्थापना एवं पृष्ठभूमि' : currentLang === 'or' ? 'ପ୍ରତିଷ୍ଠା ଓ ପୃଷ୍ଠଭୂମି' : 'Establishment & Legacy'}
               </span>
             </div>
-            <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
+            <p className="text-xs sm:text-base text-slate-700 leading-relaxed">
               {getTxt(content.aboutDesc2)}
             </p>
-            <div className="pt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-center">
-                <span className="block text-xl font-black text-emerald-800 font-mono">40762401394</span>
-                <span className="text-[11px] font-medium text-emerald-700">Govt. Reg. No.</span>
+            <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+              <div className="p-3 rounded-xl sm:rounded-2xl bg-emerald-50 border border-emerald-100 text-center">
+                <span className="block text-xs sm:text-sm md:text-base font-bold text-emerald-900 font-mono tracking-tight break-all">40762401394</span>
+                <span className="text-[10px] sm:text-[11px] font-medium text-emerald-700">Govt. Reg. No.</span>
               </div>
-              <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-100 text-center">
-                <span className="block text-xl font-black text-sky-800 font-mono">12A & 80G</span>
-                <span className="text-[11px] font-medium text-sky-700">Tax Exemption</span>
+              <div className="p-3 rounded-xl sm:rounded-2xl bg-sky-50 border border-sky-100 text-center">
+                <span className="block text-xs sm:text-sm md:text-base font-bold text-sky-900 font-mono tracking-tight">12A & 80G</span>
+                <span className="text-[10px] sm:text-[11px] font-medium text-sky-700">Tax Exemption</span>
               </div>
-              <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-100 text-center col-span-2 sm:col-span-1">
-                <span className="block text-xl font-black text-indigo-800 font-mono">Babujang</span>
-                <span className="text-[11px] font-medium text-indigo-700">Cuttack District</span>
+              <div className="p-3 rounded-xl sm:rounded-2xl bg-indigo-50 border border-indigo-100 text-center">
+                <span className="block text-xs sm:text-sm md:text-base font-bold text-indigo-900 font-mono tracking-tight">Babujang</span>
+                <span className="text-[10px] sm:text-[11px] font-medium text-indigo-700">Cuttack District</span>
               </div>
             </div>
           </div>
 
           {/* Key Impact Counter Cards */}
-          <div className="lg:col-span-5 grid grid-cols-2 gap-4">
-            <div className="bg-gradient-to-br from-emerald-800 to-teal-900 text-white p-6 rounded-3xl shadow-md">
-              <Users className="w-8 h-8 text-emerald-300 mb-2" />
-              <div className="text-3xl font-black font-mono">1,200+</div>
-              <p className="text-xs text-emerald-100 mt-1">
+          <div className="lg:col-span-5 grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="bg-gradient-to-br from-emerald-800 to-teal-900 text-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xs">
+              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-300 mb-1.5" />
+              <div className="text-xl sm:text-3xl font-extrabold font-mono">1,200+</div>
+              <p className="text-[11px] sm:text-xs text-emerald-100 mt-1 leading-tight">
                 {currentLang === 'hi' ? 'लाभार्थी परिवार' : currentLang === 'or' ? 'ଉପକୃତ ପରିବାର' : 'Beneficiary Families Served'}
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-800 to-slate-900 text-white p-6 rounded-3xl shadow-md">
-              <Heart className="w-8 h-8 text-sky-300 mb-2" />
-              <div className="text-3xl font-black font-mono">50+</div>
-              <p className="text-xs text-sky-100 mt-1">
+            <div className="bg-gradient-to-br from-blue-800 to-slate-900 text-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xs">
+              <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-sky-300 mb-1.5" />
+              <div className="text-xl sm:text-3xl font-extrabold font-mono">50+</div>
+              <p className="text-[11px] sm:text-xs text-sky-100 mt-1 leading-tight">
                 {currentLang === 'hi' ? 'युवा स्वयंसेवक' : currentLang === 'or' ? 'ଯୁବ ସ୍ୱେଚ୍ଛାସେବୀ' : 'Active Youth Volunteers'}
               </p>
             </div>

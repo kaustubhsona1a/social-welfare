@@ -59,11 +59,11 @@ export const NewsAndEventsSection: React.FC<NewsAndEventsProps> = ({ currentLang
         </div>
 
         {/* Grid Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           {filtered.map(item => (
             <div 
               key={item.id} 
-              className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+              className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
             >
               <div>
                 <div className="relative aspect-video overflow-hidden bg-slate-900">

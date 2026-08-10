@@ -300,15 +300,15 @@ export const DonateAndImpact: React.FC<DonateAndImpactProps> = ({
           </div>
 
           {/* Stories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {stories.map((story) => (
               <div 
                 key={story.id}
-                className="glass-card rounded-[2rem] border border-sky-100/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group cursor-pointer hover:-translate-y-0.5"
+                className="glass-card rounded-2xl sm:rounded-3xl border border-sky-100/80 shadow-xs hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group cursor-pointer hover:-translate-y-0.5"
                 onClick={() => setSelectedStory(story)}
               >
                 {/* Image Banner */}
-                <div className="relative h-52 bg-slate-900 overflow-hidden">
+                <div className="relative h-44 sm:h-52 bg-slate-900 overflow-hidden">
                   <img 
                     src={story.imageUrl} 
                     alt={story.titleEn}
@@ -335,7 +335,7 @@ export const DonateAndImpact: React.FC<DonateAndImpactProps> = ({
                 </div>
 
                 {/* Body */}
-                <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between space-y-3.5">
                   <div className="space-y-2">
                     <h4 className="text-base sm:text-lg font-normal text-slate-900 group-hover:text-sky-800 transition-colors leading-snug font-heading">
                       {currentLang === 'or' ? story.titleOr : story.titleEn}

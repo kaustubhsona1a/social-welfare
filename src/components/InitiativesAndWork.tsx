@@ -183,14 +183,14 @@ export const InitiativesAndWork: React.FC<InitiativesAndWorkProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {drives.map((drive) => (
                 <div 
                   key={drive.id}
-                  className="bg-white rounded-[2rem] border border-slate-200/90 shadow-2xs hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between group hover:-translate-y-0.5"
+                  className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-2xs hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between group hover:-translate-y-0.5"
                 >
                   {/* Image Banner */}
-                  <div className="relative h-48 bg-slate-900 overflow-hidden">
+                  <div className="relative h-40 sm:h-48 bg-slate-900 overflow-hidden">
                     <img 
                       src={drive.imageUrl} 
                       alt={drive.titleEn}

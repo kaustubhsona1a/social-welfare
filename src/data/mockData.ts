@@ -191,8 +191,8 @@ export const INITIAL_NEWS_EVENTS: NewsEventItem[] = [
 export const INITIAL_LEADERSHIP: OfficeBearer[] = [
   {
     id: "ob-1",
-    nameEn: "Santosh Kumar Swain",
-    nameOr: "ସନ୍ତୋଷ କୁମାର ସ୍ୱାଇଁ",
+    nameEn: "Ejaz Khan",
+    nameOr: "ଏଜାଜ ଖାନ",
     roleEn: "President & Founder",
     roleOr: "ସଭାପତି ଓ ସଂସ୍ଥାପକ",
     category: "executive",

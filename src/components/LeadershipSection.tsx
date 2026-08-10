@@ -89,14 +89,14 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({
         </div>
 
         {/* Team Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {filteredTeam.map((member) => (
             <div 
               key={member.id}
-              className="glass-card rounded-[2rem] border border-sky-100/90 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group hover:-translate-y-0.5"
+              className="glass-card rounded-2xl sm:rounded-3xl border border-sky-100/90 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group hover:-translate-y-0.5"
             >
               {/* Photo Frame */}
-              <div className="relative h-72 bg-slate-900 overflow-hidden flex items-center justify-center">
+              <div className="relative h-56 sm:h-64 lg:h-72 bg-slate-900 overflow-hidden flex items-center justify-center">
                 <img 
                   src={member.imageUrl} 
                   alt={member.nameEn}
@@ -106,16 +106,16 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
                 {/* Role Ribbon Tag */}
-                <div className="absolute top-4 left-4">
-                  <span className="bg-sky-950/80 backdrop-blur-md text-sky-200 text-[10px] font-mono px-3.5 py-1 rounded-full flex items-center gap-1.5 uppercase tracking-wider border border-sky-500/30">
+                <div className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4">
+                  <span className="bg-sky-950/80 backdrop-blur-md text-sky-200 text-[10px] font-mono px-3 py-1 rounded-full flex items-center gap-1.5 uppercase tracking-wider border border-sky-500/30">
                     <UserCheck className="w-3.5 h-3.5 text-sky-300" />
                     {currentLang === 'or' ? getOdiaRole(member.roleEn, member.roleOr) : member.roleEn}
                   </span>
                 </div>
 
                 {/* Name Overlay on Photo */}
-                <div className="absolute bottom-4 left-4 right-4 text-white space-y-0.5">
-                  <h3 className="text-xl font-normal leading-snug drop-shadow-md font-heading">
+                <div className="absolute bottom-3.5 left-3.5 right-3.5 sm:bottom-4 sm:left-4 sm:right-4 text-white space-y-0.5">
+                  <h3 className="text-lg sm:text-xl font-normal leading-snug drop-shadow-md font-heading">
                     {currentLang === 'or' ? getOdiaName(member.nameEn, member.nameOr) : member.nameEn}
                   </h3>
                   <p className="text-xs text-sky-300 font-light font-mono">
@@ -125,8 +125,8 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({
               </div>
 
               {/* Bio & Details */}
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-light italic border-l-2 border-sky-600 pl-3 bg-sky-50/50 py-2.5 rounded-r-2xl">
+              <div className="p-4 sm:p-5 lg:p-6 flex-1 flex flex-col justify-between space-y-3.5">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-light italic border-l-2 border-sky-600 pl-3 bg-sky-50/50 py-2 rounded-r-xl">
                   "{currentLang === 'or' ? member.bioOr : member.bioEn}"
                 </p>
 

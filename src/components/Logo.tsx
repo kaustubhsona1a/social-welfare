@@ -13,7 +13,7 @@ export const Logo: React.FC<LogoProps> = ({
   className = '', 
   size = 'md', 
   showText = false,
-  allowUpload = true 
+  allowUpload = false 
 }) => {
   const [customLogo, setCustomLogo] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -79,19 +79,21 @@ export const Logo: React.FC<LogoProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleImageUpload} 
-        accept="image/*" 
-        className="hidden" 
-      />
+      {allowUpload && (
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleImageUpload} 
+          accept="image/*" 
+          className="hidden" 
+        />
+      )}
 
       <div 
-        className={`relative flex-shrink-0 group/logo cursor-pointer ${sizeMap[size]}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={handleUploadClick}
+        className={`relative flex-shrink-0 group/logo ${allowUpload ? 'cursor-pointer' : ''} ${sizeMap[size]}`}
+        onMouseEnter={() => allowUpload && setIsHovered(true)}
+        onMouseLeave={() => allowUpload && setIsHovered(false)}
+        onClick={allowUpload ? handleUploadClick : undefined}
         title={allowUpload ? "Click to upload custom logo image" : undefined}
       >
         {customLogo ? (

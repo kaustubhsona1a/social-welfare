@@ -1214,6 +1214,31 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           {activeTab === 'upload' && (
             <div className="space-y-4 max-w-2xl mx-auto">
 
+              {/* NGO Official Logo Card (Restricted to Operator Portal) */}
+              <div className="bg-white p-5 rounded-xl border border-emerald-300 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Official Foundation Emblem & Logo Settings</span>
+                  </h4>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Operator Access Only
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Upload or change the official Social Welfare Foundation emblem shown on the website header and footer. Viewers on the public website cannot modify or upload logos.
+                </p>
+
+                <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <Logo allowUpload={true} size="lg" />
+                  <div className="text-xs space-y-1">
+                    <span className="font-semibold text-slate-800 block">Click logo on the left to upload a custom image</span>
+                    <span className="text-slate-500 block">Supports PNG, JPG or WebP (under 5MB). Hover and click the red reset button to revert to the default official emblem anytime.</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Donate Section UPI Barcode & Payment Details Card */}
               <div className="bg-white p-5 rounded-xl border border-emerald-300 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b pb-2">

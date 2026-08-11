@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { transliterateNameToOdia } from './odiaTranslator';
+import { transliterateNameToOdia, getOdiaName, getOdiaRole } from './odiaTranslator';
 import { 
   FOUNDATION_INFO, 
   INITIAL_DRIVES, 
@@ -68,31 +68,39 @@ const notifySupabaseError = (msg: string) => {
 // DB MAPPERS (camelCase TS <-> snake_case SQL)
 // ==========================================
 
-const mapLeaderToDb = (l: OfficeBearer) => ({
-  id: l.id || 'leader-' + Date.now(),
-  name_en: l.nameEn || 'Leader',
-  name_or: l.nameOr || l.nameEn || 'Leader',
-  role_en: l.roleEn || 'Member',
-  role_or: l.roleOr || l.roleEn || 'Member',
-  category: l.category || 'executive',
-  bio_en: l.bioEn || '',
-  bio_or: l.bioOr || '',
-  phone: l.phone || '',
-  image_url: l.imageUrl || ''
-});
+const mapLeaderToDb = (l: OfficeBearer) => {
+  const nameEn = l.nameEn || 'Leader';
+  const roleEn = l.roleEn || 'Member';
+  return {
+    id: l.id || 'leader-' + Date.now(),
+    name_en: nameEn,
+    name_or: getOdiaName(nameEn, l.nameOr),
+    role_en: roleEn,
+    role_or: getOdiaRole(roleEn, l.roleOr),
+    category: l.category || 'executive',
+    bio_en: l.bioEn || '',
+    bio_or: l.bioOr || '',
+    phone: l.phone || '',
+    image_url: l.imageUrl || ''
+  };
+};
 
-const mapLeaderFromDb = (row: any): OfficeBearer => ({
-  id: row.id,
-  nameEn: row.name_en || '',
-  nameOr: row.name_or || row.name_en || '',
-  roleEn: row.role_en || '',
-  roleOr: row.role_or || row.role_en || '',
-  category: row.category || 'executive',
-  bioEn: row.bio_en || '',
-  bioOr: row.bio_or || '',
-  phone: row.phone || '',
-  imageUrl: row.image_url || ''
-});
+const mapLeaderFromDb = (row: any): OfficeBearer => {
+  const nameEn = row.name_en || '';
+  const roleEn = row.role_en || '';
+  return {
+    id: row.id,
+    nameEn,
+    nameOr: getOdiaName(nameEn, row.name_or),
+    roleEn,
+    roleOr: getOdiaRole(roleEn, row.role_or),
+    category: row.category || 'executive',
+    bioEn: row.bio_en || '',
+    bioOr: row.bio_or || '',
+    phone: row.phone || '',
+    imageUrl: row.image_url || ''
+  };
+};
 
 const mapDriveToDb = (d: DonationDrive) => ({
   id: d.id || 'drive-' + Date.now(),
@@ -488,16 +496,18 @@ export class FoundationRepository {
       }
     }
 
-    // Sanitize stale mock data or mismatching Odia names
+    // Sanitize stale mock data or mismatching Odia names dynamically
     let modified = false;
     list = list.map(l => {
-      let updated = { ...l };
-      if (l.nameEn === 'Santosh Kumar Swain') {
-        updated.nameEn = 'Ejaz Khan';
-        updated.nameOr = 'ଏଜାଜ ଖାନ';
+      const updated = { ...l };
+      const correctNameOr = getOdiaName(l.nameEn, l.nameOr);
+      if (updated.nameOr !== correctNameOr) {
+        updated.nameOr = correctNameOr;
         modified = true;
-      } else if (l.nameOr && l.nameOr.includes('ସନ୍ତୋଷ') && !l.nameEn.toLowerCase().includes('santosh')) {
-        updated.nameOr = transliterateNameToOdia(l.nameEn);
+      }
+      const correctRoleOr = getOdiaRole(l.roleEn, l.roleOr);
+      if (updated.roleOr !== correctRoleOr) {
+        updated.roleOr = correctRoleOr;
         modified = true;
       }
       return updated;

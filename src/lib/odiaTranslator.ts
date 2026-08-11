@@ -64,9 +64,17 @@ const HONORIFICS_MAP: Record<string, string> = {
 
 const NAME_DICTIONARY: Record<string, string> = {
   // Common Muslim and Non-Hindu First/Last Names in Odisha
+  'abdul': 'ଅବଦୁଲ',
+  'bari': 'ବାରି',
+  'khan': 'ଖାନ',
+  'mira': 'ମୀରା',
+  'meera': 'ମୀରା',
+  'salim': 'ସାଲିମ',
+  'saleem': 'ସାଲିମ',
+  'begum': 'ବେଗମ',
+  'begam': 'ବେଗମ',
   'ejaz': 'ଏଜାଜ',
   'ejaj': 'ଏଜାଜ',
-  'khan': 'ଖାନ',
   'mohammad': 'ମହମ୍ମଦ',
   'mohammed': 'ମହମ୍ମଦ',
   'md': 'ମହମ୍ମଦ',
@@ -88,6 +96,10 @@ const NAME_DICTIONARY: Record<string, string> = {
   'imtiaz': 'ଇମତିଆଜ',
   'tariq': 'ତାରିକ',
   'parvez': 'ପରଭେଜ',
+  'subhashree': 'ସୁଭଶ୍ରୀ',
+  'subhashri': 'ସୁଭଶ୍ରୀ',
+  'subhasree': 'ସୁଭଶ୍ରୀ',
+  'subhree': 'ସୁଭଶ୍ରୀ',
 
   // First/Middle Names
   'ramesh': 'ରମେଶ',
@@ -413,23 +425,52 @@ export function transliterateNameToOdia(nameEn?: string): string {
   return translatedParts.join(' ');
 }
 
-/** Helper to get Odia Name - uses provided nameOr if in Odia script and matching, else transliterates nameEn */
+/**
+ * Dynamic check: verifies if an existing Odia name string actually corresponds 
+ * to the given English name, preventing stale leftover names from prior records.
+ */
+function isOdiaNameMatchingEnglish(nameEn: string, nameOr: string, generatedOdia: string): boolean {
+  if (!nameEn || !nameOr) return false;
+  if (nameOr.trim() === generatedOdia.trim()) return true;
+
+  const enParts = nameEn.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const orWords = nameOr.trim().split(/\s+/).filter(Boolean);
+  const genWords = generatedOdia.trim().split(/\s+/).filter(Boolean);
+
+  // If word count is different by more than 1, it's a stale leftover name
+  if (Math.abs(orWords.length - enParts.length) > 1) {
+    return false;
+  }
+
+  // Check if at least one Odia word in nameOr matches an Odia word in generatedOdia or shares prefix
+  let matchCount = 0;
+  for (const genWord of genWords) {
+    const matched = orWords.some(orWord => {
+      if (orWord === genWord) return true;
+      if (genWord.length >= 2 && orWord.length >= 2) {
+        return genWord.substring(0, 2) === orWord.substring(0, 2);
+      }
+      return false;
+    });
+    if (matched) matchCount++;
+  }
+
+  return matchCount >= Math.ceil(genWords.length / 2);
+}
+
+/** Helper to get Odia Name - automatically transliterates English name dynamically into Odia script */
 export function getOdiaName(nameEn?: string, nameOr?: string): string {
-  if (!nameEn) return nameOr || 'ସେବାବ୍ରତୀ';
+  if (!nameEn || !nameEn.trim()) return nameOr || 'ସେବାବ୍ରତୀ';
+
+  const generatedOdia = transliterateNameToOdia(nameEn);
 
   if (nameOr && hasOdiaScript(nameOr)) {
-    const lowerEn = nameEn.toLowerCase();
-    // Guard against stale mock names from initial database state
-    const isSantoshStale = nameOr.includes('ସନ୍ତୋଷ') && !lowerEn.includes('santosh');
-    const isPradiptaStale = nameOr.includes('ପ୍ରଦୀପ୍ତ') && !lowerEn.includes('pradipta');
-    const isDebendraStale = nameOr.includes('ଦେବେନ୍ଦ୍ର') && !lowerEn.includes('debendra');
-
-    if (!isSantoshStale && !isPradiptaStale && !isDebendraStale) {
+    if (isOdiaNameMatchingEnglish(nameEn, nameOr, generatedOdia)) {
       return nameOr;
     }
   }
 
-  return transliterateNameToOdia(nameEn);
+  return generatedOdia;
 }
 
 /** Helper to get Odia Role - uses provided roleOr if in Odia script, else translates roleEn */

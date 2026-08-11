@@ -213,12 +213,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
       ...(editLeaderData as OfficeBearer),
       nameEn,
       roleEn,
-      nameOr: editLeaderData.nameOr && hasOdiaScript(editLeaderData.nameOr) 
-        ? editLeaderData.nameOr 
-        : transliterateNameToOdia(nameEn),
-      roleOr: editLeaderData.roleOr && hasOdiaScript(editLeaderData.roleOr)
-        ? editLeaderData.roleOr 
-        : translateDesignationToOdia(roleEn),
+      nameOr: getOdiaName(nameEn, editLeaderData.nameOr),
+      roleOr: getOdiaRole(roleEn, editLeaderData.roleOr),
     };
 
     await FoundationRepository.saveLeadershipMember(updatedLeader);
@@ -566,23 +562,31 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Leader Full Name</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Leader Full Name (English)</label>
                       <input
                         type="text"
                         placeholder="e.g. Ramesh Das"
                         value={newLeaderNameEn}
-                        onChange={e => setNewLeaderNameEn(e.target.value)}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setNewLeaderNameEn(val);
+                          setNewLeaderNameOr(transliterateNameToOdia(val));
+                        }}
                         required
                         className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Designation / Role</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Designation / Role (English)</label>
                       <input
                         type="text"
                         placeholder="e.g. President / Treasurer"
                         value={newLeaderRoleEn}
-                        onChange={e => setNewLeaderRoleEn(e.target.value)}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setNewLeaderRoleEn(val);
+                          setNewLeaderRoleOr(translateDesignationToOdia(val));
+                        }}
                         required
                         className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
@@ -669,13 +673,14 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                             <input
                               type="text"
                               value={editLeaderData.nameEn || ''}
-                              onChange={e => setEditLeaderData({ 
-                                ...editLeaderData, 
-                                nameEn: e.target.value, 
-                                nameOr: (editLeaderData.nameOr && hasOdiaScript(editLeaderData.nameOr)) 
-                                  ? editLeaderData.nameOr 
-                                  : transliterateNameToOdia(e.target.value) 
-                              })}
+                              onChange={e => {
+                                const newName = e.target.value;
+                                setEditLeaderData({ 
+                                  ...editLeaderData, 
+                                  nameEn: newName, 
+                                  nameOr: transliterateNameToOdia(newName)
+                                });
+                              }}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
                           </div>
@@ -684,14 +689,33 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                             <input
                               type="text"
                               value={editLeaderData.roleEn || ''}
-                              onChange={e => setEditLeaderData({ 
-                                ...editLeaderData, 
-                                roleEn: e.target.value, 
-                                roleOr: (editLeaderData.roleOr && hasOdiaScript(editLeaderData.roleOr)) 
-                                  ? editLeaderData.roleOr 
-                                  : translateDesignationToOdia(e.target.value) 
-                              })}
+                              onChange={e => {
+                                const newRole = e.target.value;
+                                setEditLeaderData({ 
+                                  ...editLeaderData, 
+                                  roleEn: newRole, 
+                                  roleOr: translateDesignationToOdia(newRole)
+                                });
+                              }}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600">Odia Name (Auto-converted)</label>
+                            <input
+                              type="text"
+                              value={editLeaderData.nameOr || transliterateNameToOdia(editLeaderData.nameEn)}
+                              onChange={e => setEditLeaderData({ ...editLeaderData, nameOr: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border font-serif"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600">Odia Role (Auto-converted)</label>
+                            <input
+                              type="text"
+                              value={editLeaderData.roleOr || translateDesignationToOdia(editLeaderData.roleEn)}
+                              onChange={e => setEditLeaderData({ ...editLeaderData, roleOr: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border font-serif"
                             />
                           </div>
                           <div>

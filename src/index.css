@@ -9,6 +9,20 @@
 
   body {
     font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+    overflow-x: hidden;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+    overflow-x: hidden;
+    width: 100%;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -128,4 +142,18 @@
 html, body {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Prevent iOS Safari auto-zooming on focus for all inputs, selects, and textareas */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important; /* iOS Safari requires >= 16px to prevent automatic viewport zoom on focus */
+  }
 }

@@ -32,41 +32,92 @@ export const AboutAndVision: React.FC<AboutAndVisionProps> = ({ currentLang }) =
     },
     visionTitle: {
       en: "Our Vision",
-      hi: "हमारा दृष्टिकोण (Vision)",
-      or: "ଆମର ଲକ୍ଷ୍ୟ (Vision)"
+      hi: "हमारा दृष्टिकोण",
+      or: "ଆମର ଲକ୍ଷ୍ୟ"
+    },
+    visionQuote: {
+      en: "“To build an inclusive, self-reliant, healthy and empowered society where every individual has access to food, healthcare, education and a dignified life, and where no one in need is left behind.”",
+      hi: "“एक समावेशी, आत्मनिर्भर, स्वस्थ और सशक्त समाज का निर्माण करना जहाँ हर व्यक्ति को भोजन, स्वास्थ्य सेवा, शिक्षा और गरिमापूर्ण जीवन मिले, और जहाँ कोई भी असहाय पीछे न छूटे।”",
+      or: "“ଏକ ଅନ୍ତର୍ଭୁକ୍ତ, ଆତ୍ମନିର୍ଭରଶୀଳ, ସୁସ୍ଥ ଏବଂ ସଶକ୍ତ ସମାଜ ଗଠନ କରିବା ଯେଉଁଠାରେ ପ୍ରତ୍ୟେକ ବ୍ୟକ୍ତିଙ୍କର ଖାଦ୍ୟ, ସ୍ୱାସ୍ଥ୍ୟସେବା, ଶିକ୍ଷା ଏବଂ ମର୍ଯ୍ୟାଦାପୂର୍ଣ୍ଣ ଜୀବନ ବଞ୍ଚିବାର ସୁଯୋଗ ରହିବ, ଏବଂ କେହି ବି ଅସହାୟ ପଛରେ ରହିବେ ନାହିଁ।”"
     },
     visionDesc: {
-      en: "A self-reliant, healthy, and educated rural Odisha where no senior citizen suffers from hunger, no child drops out of school due to poverty, and emergency disaster relief reaches every vulnerable doorstep.",
-      hi: "एक आत्मनिर्भर, स्वस्थ और शिक्षित ग्रामीण ओडिशा जहाँ कोई बुजुर्ग भूखा न रहे, कोई बच्चा गरीबी के कारण शिक्षा से वंचित न हो और हर पीड़ित को तुरंत राहत मिले।",
-      or: "ଏକ ଆତ୍ମନିର୍ଭର, ସୁସ୍ଥ ଓ ଶିକ୍ଷିତ ଗ୍ରାମୀଣ ଓଡ଼ିଶା, ଯେଉଁଠାରେ କୌଣସି ବୃଦ୍ଧ ନିରାଶ୍ରୟ ହେବେ ନାହିଁ ଏବଂ କୌଣସି ଶିଶୁ ଶିକ୍ଷାରୁ ବଞ୍ଚିତ ହେବେ ନାହିଁ।"
+      en: "We envision creating sustainable positive change in rural and underserved communities by providing support, opportunities and resources that help people live with dignity and become self-reliant.",
+      hi: "हम सहायता, अवसर और संसाधन प्रदान करके ग्रामीण और वंचित समुदायों में स्थायी सकारात्मक बदलाव लाने की दिशा में समर्पित हैं ताकि लोग सम्मान के साथ जी सकें और आत्मनिर्भर बन सकें।",
+      or: "ଆମେ ଗ୍ରାମାଞ୍ଚଳ ଏବଂ ଅବହେଳିତ ସମ୍ପ୍ରଦାୟରେ ସହାୟତା, ସୁଯୋଗ ଏବଂ ସମ୍ବଳ ଯୋଗାଇ ସ୍ଥାୟୀ ସକାରାତ୍ମକ ପରିବର୍ତ୍ତନ ସୃଷ୍ଟି କରିବାକୁ ଲକ୍ଷ୍ୟ ରଖିଛୁ ଯାହା ଲୋକଙ୍କୁ ଆତ୍ମସମ୍ମାନର ସହ ବଞ୍ଚିବାକୁ ଏବଂ ଆତ୍ମନିର୍ଭରଶୀଳ ହେବାକୁ ସାହାଯ୍ୟ କରିବ।"
     },
     missionTitle: {
       en: "Our Mission",
-      hi: "हमारा मिशन (Mission)",
-      or: "ଆମର ମିଶନ୍ (Mission)"
+      hi: "हमारा मिशन",
+      or: "ଆମର ମିଶନ୍"
     },
     missionPoints: [
       {
-        en: "Annadaana: Monthly dry ration kits and cooked meal drives for destitute elders in Babujang & Kishore Nagar.",
-        hi: "अन्नदान: असहाय बुजुर्गों के लिए मासिक राशन किट और भोजन वितरण।",
-        or: "ଅନ୍ନଦାନ: ନିଃସହାୟ ବୃଦ୍ଧବୃଦ୍ଧାଙ୍କ ପାଇଁ ମାସିକ ସୁଖା ରାସନ ଓ ଖାଦ୍ୟ ବଣ୍ଟନ।"
+        title: { en: "Food & Nutrition:", hi: "खाद्य एवं पोषण:", or: "ଖାଦ୍ୟ ଓ ପୋଷଣ:" },
+        desc: {
+          en: "To provide nutritious food, ration kits and essential support to underprivileged families, senior citizens, patients and their attendants.",
+          hi: "वंचित परिवारों, वरिष्ठ नागरिकों, रोगियों और उनके परिचारकों को पौष्टिक भोजन, राशन किट और आवश्यक सहायता प्रदान करना।",
+          or: "ଅସହାୟ ପରିବାର, ବୃଦ୍ଧବୃଦ୍ଧା, ରୋଗୀ ଏବଂ ସେମାନଙ୍କ ସମ୍ପର୍କୀୟଙ୍କୁ ପୌଷ୍ଟିକ ଖାଦ୍ୟ, ରାସନ କିଟ୍ ଏବଂ ଆବଶ୍ୟକୀୟ ସହାୟତା ଯୋଗାଇଦେବା।"
+        }
       },
       {
-        en: "Arogya Seva: Free health check-up camps, free diagnostic tests, and prescription medicine support.",
-        hi: "आरोग्य सेवा: मुफ्त स्वास्थ्य जांच शिविर और आवश्यक दवा सहायता।",
-        or: "ଆରୋଗ୍ୟ ସେବା: ମାଗଣା ସ୍ୱାସ୍ଥ୍ୟ ପରୀକ୍ଷା ଶିବିର ଓ ଔଷଧ ସହାୟତା।"
+        title: { en: "Healthcare:", hi: "स्वास्थ्य सेवा:", or: "ସ୍ୱାସ୍ଥ୍ୟସେବା:" },
+        desc: {
+          en: "To organize free health check-up camps, provide medical assistance and help vulnerable communities access essential healthcare services.",
+          hi: "निःशुल्क स्वास्थ्य जांच शिविर आयोजित करना, चिकित्सा सहायता देना और जरूरतमंदों को स्वास्थ्य सेवाओं तक पहुँच प्रदान करना।",
+          or: "ମାଗଣା ସ୍ୱାସ୍ଥ୍ୟ ପରୀକ୍ଷା ଶିବିର ଆୟୋଜନ କରିବା, ଡାକ୍ତରୀ ସହାୟତା ଯୋଗାଇଦେବା ଏବଂ ଗ୍ରାମାଞ୍ଚଳର ଅସହାୟ ଲୋକଙ୍କୁ ଆବଶ୍ୟକୀୟ ସ୍ୱାସ୍ଥ୍ୟସେବା ଯୋଗାଇଦେବା।"
+        }
       },
       {
-        en: "Shiksha Sahayata: Books, bags, and uniform stipends for underprivileged primary school students.",
-        hi: "शिक्षा सहायता: गरीब बच्चों के लिए किताबें, बैग और स्कूल फीस सहायता।",
-        or: "ଶିକ୍ଷା ସହାୟତା: ଗରିବ ଛାତ୍ରଛାତ୍ରୀଙ୍କୁ ବହି, ବ୍ୟାଗ୍‌ ଓ ଷ୍ଟେସନାରୀ।"
+        title: { en: "Education Support:", hi: "शिक्षा सहायता:", or: "ଶିକ୍ଷା ସହାୟତା:" },
+        desc: {
+          en: "To support children from economically weaker families with books, school bags, uniforms and other educational materials.",
+          hi: "आर्थिक रूप से कमजोर परिवारों के बच्चों को किताबें, स्कूल बैग, यूनिफॉर्म और अन्य शैक्षणिक सामग्री प्रदान करना।",
+          or: "ଆର୍ଥିକ ଅନାଟନରେ ଥିବା ପରିବାରର ପିଲାମାନଙ୍କୁ ବହି, ସ୍କୁଲ ବ୍ୟାଗ୍, ୟୁନିଫର୍ମ ଏବଂ ଅନ୍ୟାନ୍ୟ ଶିକ୍ଷା ସାମଗ୍ରୀ ପ୍ରଦାନ କରିବା।"
+        }
       },
       {
-        en: "Emergency Disaster Relief: Swift flood and monsoon relief with ready-to-eat packets in Tyendakura & Cuttack.",
-        hi: "आपदा राहत: बाढ़ और मानसूनी आपदा में तुरंत तैयार भोजन और राहत सामग्री पहुँचाना।",
-        or: "ଆପାତକାଳୀନ ରିଲିଫ୍: ବନ୍ୟା ଓ ବର୍ଷା ସମୟରେ ତୁରନ୍ତ ସୁଜି, ଛୁଡ଼ା, ଗୁଡ଼ ଓ ଖାଦ୍ୟ ପ୍ୟାକେଟ୍‌ ବଣ୍ଟନ।"
+        title: { en: "Disaster Relief:", hi: "आपदा राहत:", or: "ଆପାତକାଳୀନ ରିଲିଫ୍:" },
+        desc: {
+          en: "To provide timely food, ration kits and essential supplies during floods, cyclones, pandemics and other emergencies.",
+          hi: "बाढ़, चक्रवात, महामारी और अन्य आपात स्थितियों के दौरान समय पर भोजन, राशन किट और आवश्यक सामग्री वितरित करना।",
+          or: "ବନ୍ୟା, ବାତ୍ୟା, ମହାମାରୀ ଏବଂ ଅନ୍ୟାନ୍ୟ ଜରୁରୀ ସମୟରେ ତୁରନ୍ତ ଖାଦ୍ୟ, ରାସନ କିଟ୍ ଏବଂ ଆବଶ୍ୟକୀୟ ସାମଗ୍ରୀ ଯୋଗାଇଦେବା।"
+        }
+      },
+      {
+        title: { en: "Women & Youth Empowerment:", hi: "महिला एवं युवा सशक्तिकरण:", or: "ମହିଳା ଓ ଯୁବ ସଶକ୍ତୀକରଣ:" },
+        desc: {
+          en: "To promote skill development, awareness and opportunities that help women and young people become more independent and confident.",
+          hi: "कौशल विकास, जागरूकता और अवसरों को बढ़ावा देना ताकि महिलाएं और युवा अधिक स्वतंत्र और आत्मविश्वासी बन सकें।",
+          or: "ମହିଳା ଏବଂ ଯୁବପିଢ଼ିଙ୍କୁ ଅଧିକ ସ୍ୱାବଲମ୍ବୀ ଏବଂ ଆତ୍ମବିଶ୍ୱାସୀ କରିବା ପାଇଁ ଦକ୍ଷତା ବିକାଶ, ସଚେତନତା ଓ ସୁଯୋଗ ସୃଷ୍ଟି କରିବା।"
+        }
+      },
+      {
+        title: { en: "Community Development:", hi: "सामुदायिक विकास:", or: "ସାମାଜିକ ବିକାଶ:" },
+        desc: {
+          en: "To work for better sanitation, environmental protection, social awareness and sustainable development in rural communities.",
+          hi: "ग्रामीण समुदायों में बेहतर स्वच्छता, पर्यावरण संरक्षण, सामाजिक जागरूकता और सतत विकास के लिए काम करना।",
+          or: "ଗ୍ରାମାଞ୍ଚଳରେ ଉନ୍ନତ ସ୍ୱଚ୍ଛତା, ପରିବେଶ ସୁରକ୍ଷା, ସାମାଜିକ ସଚେତନତା ଏବଂ ସ୍ଥାୟୀ ବିକାଶ ପାଇଁ କାର୍ଯ୍ୟ କରିବା।"
+        }
+      },
+      {
+        title: { en: "Humanitarian Service:", hi: "मानवीय सेवा:", or: "ମାନବିକ ସେବା:" },
+        desc: {
+          en: "To serve people in need without discrimination, promoting compassion, dignity, equality and unity in society.",
+          hi: "बिना किसी भेदभाव के जरूरतमंद लोगों की सेवा करना, समाज में करुणा, गरिमा, समानता और एकता को बढ़ावा देना।",
+          or: "ବିନା କୌଣସି ଭେଦଭାବରେ ଜରୁରୀ ଲୋକଙ୍କ ସେବା କରିବା, ସମାଜରେ ଦୟା, ମର୍ଯ୍ୟାଦା, ସମାନତା ଏବଂ ଏକତା ପ୍ରତିଷ୍ଠା କରିବା।"
+        }
       }
     ],
+    commitmentTitle: {
+      en: "Our Commitment",
+      hi: "हमारी प्रतिबद्धता",
+      or: "ଆମର ପ୍ରତିବଦ୍ଧତା"
+    },
+    commitmentQuote: {
+      en: "“Service to Humanity is Service to God.”",
+      hi: "“मानव सेवा ही ईश्वर सेवा है।”",
+      or: "“ମାନବ ସେବା ହିଁ ମାଧବ ସେବା।”"
+    },
     coreValuesTitle: {
       en: "Core Institutional Values",
       hi: "हमारे मुख्य सिद्धांत",
@@ -150,49 +201,87 @@ export const AboutAndVision: React.FC<AboutAndVisionProps> = ({ currentLang }) =
           </div>
         </div>
 
-        {/* Vision & Mission Cards */}
-        <div id="vision-mission" className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Vision, Mission & Commitment Cards */}
+        <div id="vision-mission" className="space-y-6 sm:space-y-8">
           
-          {/* Vision */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
-              <Eye className="w-40 h-40 text-slate-900" />
-            </div>
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-900 text-xs font-bold mb-4">
-                <Eye className="w-4 h-4 text-sky-700" />
-                <span>{getTxt(content.visionTitle)}</span>
+          {/* Top Row: Vision & Commitment */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+            
+            {/* Our Vision Card */}
+            <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                <Eye className="w-40 h-40 text-slate-900" />
               </div>
-              <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-medium">
-                {getTxt(content.visionDesc)}
-              </p>
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-900 text-xs font-bold mb-4">
+                  <Eye className="w-4 h-4 text-sky-700" />
+                  <span>{getTxt(content.visionTitle)}</span>
+                </div>
+                
+                <blockquote className="text-base sm:text-lg text-slate-900 font-serif italic leading-relaxed border-l-4 border-sky-600 pl-4 my-3 bg-sky-50/50 py-2 pr-3 rounded-r-xl">
+                  {getTxt(content.visionQuote)}
+                </blockquote>
+
+                <p className="mt-4 text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                  {getTxt(content.visionDesc)}
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400 italic">
+                Sustainable positive change in rural and underserved communities.
+              </div>
             </div>
-            <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 italic">
-              "Building sustainable dignity in rural Cuttack."
+
+            {/* Our Commitment Card */}
+            <div className="lg:col-span-5 bg-gradient-to-br from-emerald-900 via-teal-950 to-slate-950 text-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-emerald-800/50 shadow-xs relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+                <Heart className="w-40 h-40 text-emerald-300" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-800/80 text-emerald-200 text-xs font-bold mb-4 border border-emerald-500/30">
+                  <Heart className="w-4 h-4 text-emerald-300" />
+                  <span>{getTxt(content.commitmentTitle)}</span>
+                </div>
+                
+                <blockquote className="text-xl sm:text-2xl font-normal font-heading text-emerald-100 italic leading-snug my-4 border-l-4 border-emerald-400 pl-4">
+                  {getTxt(content.commitmentQuote)}
+                </blockquote>
+              </div>
+              
+              <div className="pt-4 border-t border-emerald-800/60 text-xs text-emerald-200/80 leading-relaxed">
+                Dedicated to serving every individual in need with unconditional compassion, dignity, equality and unity.
+              </div>
             </div>
+
           </div>
 
-          {/* Mission */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          {/* Bottom Row: Our Mission Card */}
+          <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs relative overflow-hidden">
             <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
               <Target className="w-40 h-40 text-slate-900" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold mb-6">
                 <Target className="w-4 h-4 text-emerald-700" />
                 <span>{getTxt(content.missionTitle)}</span>
               </div>
-              <ul className="space-y-3">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
                 {content.missionPoints.map((pt, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
+                  <div key={idx} className="flex items-start gap-3 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-50/80 border border-slate-100 hover:border-emerald-200 transition-colors">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>{pt[currentLang] || pt.en}</span>
-                  </li>
+                    <div className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                      <strong className="font-bold text-slate-900 block sm:inline mr-1">
+                        {getTxt(pt.title)}
+                      </strong>
+                      <span>{getTxt(pt.desc)}</span>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
-            <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 italic">
-              "Service to humanity is service to God."
+
+            <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400 italic">
+              "Working together so no one in need is left behind."
             </div>
           </div>
 

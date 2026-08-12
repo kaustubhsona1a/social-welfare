@@ -131,16 +131,6 @@ export const Footer: React.FC<FooterProps> = ({
                     <span>Operator Hub (Upload Images)</span>
                   </button>
                 )}
-
-                {onOpenSupabaseModal && (
-                  <button
-                    onClick={onOpenSupabaseModal}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-light transition-all"
-                  >
-                    <Database className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Supabase Backend Script</span>
-                  </button>
-                )}
               </div>
             </div>
           </div>

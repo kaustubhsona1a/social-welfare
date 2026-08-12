@@ -17,10 +17,14 @@ import {
   Database,
   CheckCircle2,
   RefreshCw,
-  ShieldCheck
+  ShieldCheck,
+  Lock,
+  LogOut,
+  User,
+  Key
 } from 'lucide-react';
 import { Logo } from './Logo';
-import { FoundationRepository, isSupabaseConfigured, SUPABASE_SQL_SCHEMA } from '../lib/supabase';
+import { FoundationRepository, isSupabaseConfigured } from '../lib/supabase';
 import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest, PaymentInfo } from '../types';
 import { transliterateNameToOdia, translateDesignationToOdia, hasOdiaScript } from '../lib/odiaTranslator';
 
@@ -35,6 +39,12 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   onClose,
   onDataChange
 }) => {
+  const [operatorUser, setOperatorUser] = useState(() => FoundationRepository.getOperatorUser());
+  const [authEmailInput, setAuthEmailInput] = useState('');
+  const [authPasswordInput, setAuthPasswordInput] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<'leadership' | 'drives' | 'gallery' | 'upload' | 'requests'>('leadership');
   const [uploading, setUploading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -89,6 +99,30 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
 
   if (!isOpen) return null;
 
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError(null);
+
+    const res = await FoundationRepository.signInOperator(authEmailInput, authPasswordInput);
+    setAuthLoading(false);
+
+    if (res.success) {
+      setOperatorUser({ isAuthenticated: true, email: res.userEmail || authEmailInput });
+      notify(`Authenticated as ${res.userEmail || authEmailInput}`);
+    } else {
+      setAuthError(res.error || 'Authentication failed');
+    }
+  };
+
+  const handleLogout = async () => {
+    await FoundationRepository.signOutOperator();
+    setOperatorUser({ isAuthenticated: false, email: null });
+    setAuthEmailInput('');
+    setAuthPasswordInput('');
+    notify('Logged out from Operator Portal');
+  };
+
   const leadership = FoundationRepository.getLeadership();
   const galleryItems = FoundationRepository.getGallery();
   const drives = FoundationRepository.getDrives();
@@ -99,6 +133,92 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     onDataChange();
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  // ----------------------------------------------------
+  // UNAUTHENTICATED LOCK SCREEN VIEW
+  // ----------------------------------------------------
+  if (!operatorUser.isAuthenticated) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/70 backdrop-blur-xs overflow-y-auto">
+        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col my-auto">
+          
+          {/* Header */}
+          <div className="bg-slate-900 text-white p-6 text-center relative">
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+              <Lock className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white font-heading">Operator Authentication</h3>
+            <p className="text-xs text-slate-400 mt-1">Enter operator credentials to access portal</p>
+          </div>
+
+          {/* Body Form */}
+          <form onSubmit={handleLoginSubmit} className="p-6 space-y-4">
+
+            {authError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
+                <X className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <span>{authError}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Operator Email / User ID
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  required
+                  placeholder="Operator Email / User ID"
+                  value={authEmailInput}
+                  onChange={e => setAuthEmailInput(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Security Password
+              </label>
+              <div className="relative">
+                <Key className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="password"
+                  required
+                  placeholder="Password"
+                  value={authPasswordInput}
+                  onChange={e => setAuthPasswordInput(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {authLoading ? (
+                <RefreshCw className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <ShieldCheck className="w-4 h-4 text-emerald-200" />
+              )}
+              <span>{authLoading ? 'Authenticating...' : 'Authenticate & Enter Portal'}</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   // ----------------------------------------------------
   // PAYMENT & UPI BARCODE HANDLERS
@@ -420,9 +540,9 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 flex flex-col my-4 max-h-[90vh]">
         
-        {/* Simplified Header */}
+        {/* Modal Header */}
         <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <h3 className="text-base sm:text-lg font-bold text-white font-heading">
               Operator Portal
             </h3>
@@ -431,28 +551,46 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
                 : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
             }`}>
-              {isSupabaseConfigured ? 'Supabase Connected' : 'Local Storage Active'}
+              {isSupabaseConfigured ? 'Supabase Auth' : 'Offline Mode'}
             </span>
+            {operatorUser.email && (
+              <span className="text-[11px] text-slate-300 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700 flex items-center gap-1 font-mono">
+                <User className="w-3 h-3 text-emerald-400" />
+                <span>{operatorUser.email}</span>
+              </span>
+            )}
           </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClose();
-            }}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
-            aria-label="Close Operator Panel"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-red-900/40 text-slate-300 hover:text-red-300 transition-colors text-xs font-semibold flex items-center gap-1.5 cursor-pointer border border-slate-700"
+              title="Sign Out Operator"
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-400" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              aria-label="Close Operator Panel"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Minimal Toast Notification */}
+        {/* Floating Toast Notification */}
         {toastMessage && (
-          <div className="bg-emerald-600 text-white px-4 py-2 text-xs font-medium text-center flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-700 text-white px-5 py-2.5 rounded-full shadow-lg border border-emerald-500 text-xs font-semibold flex items-center gap-2.5 animate-bounce">
+            <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
             <span>{toastMessage}</span>
           </div>
         )}
@@ -629,6 +767,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                             const url = await FoundationRepository.uploadImage(file, 'leadership');
                             setLeaderImagePreview(url);
                             setUploading(false);
+                            notify('Leader photo uploaded successfully!');
                           }
                         }}
                         accept="image/*"
@@ -897,6 +1036,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                             const url = await FoundationRepository.uploadImage(file, 'drives');
                             setDriveImagePreview(url);
                             setUploading(false);
+                            notify('Drive cover photo uploaded successfully!');
                           }
                         }}
                         accept="image/*"
@@ -1514,27 +1654,6 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                     <span>Reset Logo</span>
                   </button>
                 </div>
-              </div>
-
-              {/* Supabase SQL Info */}
-              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Production Supabase Database SQL
-                  </h4>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
-                      notify('Copied Production SQL Schema to Clipboard!');
-                    }}
-                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-lg font-mono font-medium"
-                  >
-                    Copy SQL Script
-                  </button>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Ready to deploy to Supabase. Simply create a project in Supabase dashboard and run the copied SQL script in SQL Editor.
-                </p>
               </div>
             </div>
           )}

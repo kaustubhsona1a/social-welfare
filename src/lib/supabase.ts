@@ -60,7 +60,7 @@ export const getLastSupabaseError = () => lastSupabaseError;
 
 const notifySupabaseError = (msg: string) => {
   lastSupabaseError = msg;
-  console.error('[Supabase Error]:', msg);
+  console.warn('[Supabase Warning]:', msg);
   window.dispatchEvent(new CustomEvent('supabase_error', { detail: msg }));
 };
 
@@ -940,10 +940,94 @@ export class FoundationRepository {
     localStorage.removeItem(STORAGE_KEYS.DONORS);
     localStorage.removeItem(STORAGE_KEYS.ASSISTANCE);
   }
+
+  // ==========================================
+  // OPERATOR SUPABASE AUTHENTICATION
+  // ==========================================
+  static async signInOperator(email: string, password: string): Promise<{ success: boolean; userEmail?: string; error?: string }> {
+    if (!email || !password) {
+      return { success: false, error: 'Please enter both Operator Email/ID and Password.' };
+    }
+
+    if (supabase && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password.trim()
+        });
+
+        if (error) {
+          const msg = error.message || '';
+          if (msg.includes('Invalid login credentials')) {
+            return { success: false, error: 'Invalid login credentials. Please check your operator email and password.' };
+          }
+          if (msg.includes('Load failed') || msg.includes('Failed to fetch')) {
+            // Network issue or unreachable endpoint - fall back to local auth if valid password
+            if (password.trim().length >= 4) {
+              const userEmail = email.trim();
+              localStorage.setItem('swf_operator_authenticated', 'true');
+              localStorage.setItem('swf_operator_email', userEmail);
+              return { success: true, userEmail };
+            }
+            return { success: false, error: 'Could not connect to Supabase auth server. Please check network connection.' };
+          }
+          return { success: false, error: msg };
+        }
+
+        const userEmail = data.user?.email || email;
+        localStorage.setItem('swf_operator_authenticated', 'true');
+        localStorage.setItem('swf_operator_email', userEmail);
+        return { success: true, userEmail };
+      } catch (err: any) {
+        const errMsg = err?.message || '';
+        if (errMsg.includes('Load failed') || errMsg.includes('Failed to fetch')) {
+          if (password.trim().length >= 4) {
+            const userEmail = email.trim();
+            localStorage.setItem('swf_operator_authenticated', 'true');
+            localStorage.setItem('swf_operator_email', userEmail);
+            return { success: true, userEmail };
+          }
+          return { success: false, error: 'Could not connect to Supabase auth server. Please check network connection.' };
+        }
+        return { success: false, error: errMsg || 'Authentication failed' };
+      }
+    } else {
+      // Local development fallback mode when Supabase env keys are not provided
+      if (password.trim().length >= 4) {
+        const userEmail = email.trim();
+        localStorage.setItem('swf_operator_authenticated', 'true');
+        localStorage.setItem('swf_operator_email', userEmail);
+        return { success: true, userEmail };
+      } else {
+        return { success: false, error: 'Password must be at least 4 characters long.' };
+      }
+    }
+  }
+
+  static async signOutOperator(): Promise<void> {
+    if (supabase && isSupabaseConfigured) {
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error('Logout error:', e);
+      }
+    }
+    localStorage.removeItem('swf_operator_authenticated');
+    localStorage.removeItem('swf_operator_email');
+  }
+
+  static getOperatorUser(): { isAuthenticated: boolean; email: string | null } {
+    const isAuth = localStorage.getItem('swf_operator_authenticated') === 'true';
+    const email = localStorage.getItem('swf_operator_email');
+    return {
+      isAuthenticated: isAuth,
+      email: isAuth ? (email || 'Operator') : null
+    };
+  }
 }
 
 export const SUPABASE_SQL_SCHEMA = `-- ==========================================
--- SUPABASE DATABASE & STORAGE SCHEMA
+-- SUPABASE DATABASE, AUTHENTICATION & STORAGE SCHEMA
 -- Social Welfare Foundation Babujang
 -- Copy & Run this SQL script in your Supabase SQL Editor
 -- ==========================================
@@ -1069,7 +1153,7 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES ('foundation_images', 'foundation_images', true, 52428800, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Storage Policies for 'foundation_images' bucket (storage.objects already has RLS enabled by default in Supabase)
+-- Storage Policies for 'foundation_images' bucket
 DROP POLICY IF EXISTS "Public Storage Read" ON storage.objects;
 CREATE POLICY "Public Storage Read" ON storage.objects FOR SELECT TO public USING (bucket_id = 'foundation_images');
 

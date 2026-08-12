@@ -16,8 +16,10 @@ import {
   Sparkles,
   Database,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  ShieldCheck
 } from 'lucide-react';
+import { Logo } from './Logo';
 import { FoundationRepository, isSupabaseConfigured, SUPABASE_SQL_SCHEMA } from '../lib/supabase';
 import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest, PaymentInfo } from '../types';
 import { transliterateNameToOdia, translateDesignationToOdia, hasOdiaScript } from '../lib/odiaTranslator';

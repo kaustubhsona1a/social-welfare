@@ -24,10 +24,17 @@ import {
 
 // Read env variables if available
 const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env || {};
-const supabaseUrl = metaEnv.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = metaEnv.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = (metaEnv.VITE_SUPABASE_URL || '').trim();
+const supabaseAnonKey = (metaEnv.VITE_SUPABASE_ANON_KEY || '').trim();
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+export const isSupabaseConfigured = Boolean(
+  supabaseUrl && 
+  supabaseAnonKey && 
+  supabaseUrl.startsWith('https://') &&
+  !supabaseUrl.includes('YOUR_PROJECT_REF') &&
+  !supabaseUrl.includes('YOUR_SUPABASE') &&
+  !supabaseUrl.includes('example.supabase')
+);
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
@@ -951,17 +958,28 @@ export class FoundationRepository {
 
     if (supabase && isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) => {
+          setTimeout(() => {
+            resolve({
+              data: null,
+              error: { message: 'Authentication network timeout.' }
+            });
+          }, 3500);
+        });
+
+        const authPromise = supabase.auth.signInWithPassword({
           email: email.trim(),
           password: password.trim()
         });
+
+        const { data, error } = await Promise.race([authPromise, timeoutPromise]);
 
         if (error) {
           const msg = error.message || '';
           if (msg.includes('Invalid login credentials')) {
             return { success: false, error: 'Invalid login credentials. Please check your operator email and password.' };
           }
-          if (msg.includes('Load failed') || msg.includes('Failed to fetch')) {
+          if (msg.includes('Load failed') || msg.includes('Failed to fetch') || msg.includes('timeout')) {
             // Network issue or unreachable endpoint - fall back to local auth if valid password
             if (password.trim().length >= 4) {
               const userEmail = email.trim();

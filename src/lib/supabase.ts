@@ -58,6 +58,7 @@ const STORAGE_KEYS = {
   DONORS: 'swf_donors_v1',
   ASSISTANCE: 'swf_assistance_v1',
   PAYMENT: 'swf_payment_info_v1',
+  NEWS_EVENTS: 'swf_news_events_v1',
 };
 
 // Global error tracker for UI notifications
@@ -213,6 +214,36 @@ const mapDonorFromDb = (row: any): DonorRecord => ({
   isAnonymous: Boolean(row.is_anonymous),
   transactionRef: row.transaction_ref || undefined,
   timestamp: row.created_at ? new Date(row.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently'
+});
+
+const mapNewsEventToDb = (item: NewsEventItem) => ({
+  id: item.id || 'news-' + Date.now(),
+  title_en: item.titleEn || '',
+  title_hi: item.titleHi || '',
+  title_or: item.titleOr || '',
+  date: item.date || '',
+  category: item.category || 'news',
+  location: item.location || '',
+  summary_en: item.summaryEn || '',
+  summary_hi: item.summaryHi || '',
+  summary_or: item.summaryOr || '',
+  image_url: item.imageUrl || '',
+  is_upcoming: Boolean(item.isUpcoming)
+});
+
+const mapNewsEventFromDb = (row: any): NewsEventItem => ({
+  id: row.id,
+  titleEn: row.title_en || '',
+  titleHi: row.title_hi || '',
+  titleOr: row.title_or || '',
+  date: row.date || '',
+  category: (row.category as 'news' | 'event' | 'press') || 'news',
+  location: row.location || '',
+  summaryEn: row.summary_en || '',
+  summaryHi: row.summary_hi || '',
+  summaryOr: row.summary_or || '',
+  imageUrl: row.image_url || '',
+  isUpcoming: Boolean(row.is_upcoming)
 });
 
 // ==========================================
@@ -398,6 +429,16 @@ export class FoundationRepository {
         }
       }
 
+      // 7. Fetch News & Events
+      const { data: newsData, error: newsErr } = await supabase.from('news_events').select('*');
+      if (newsErr) {
+        // Table might not exist yet in fresh Supabase setups - soft warning
+        console.warn('news_events fetch notice:', newsErr.message);
+      } else if (newsData && newsData.length > 0) {
+        const mapped = newsData.map(mapNewsEventFromDb);
+        localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(mapped));
+      }
+
       window.dispatchEvent(new Event('repository_updated'));
     } catch (err: any) {
       notifySupabaseError(`Supabase sync exception: ${err?.message || 'Unknown error'}`);
@@ -422,6 +463,14 @@ export class FoundationRepository {
       const galleryToDb = INITIAL_GALLERY.map(mapGalleryToDb);
       const { error: gErr } = await supabase.from('gallery').upsert(galleryToDb);
       if (gErr) notifySupabaseError(`Seed gallery error: ${gErr.message}`);
+
+      // Seed news & events
+      try {
+        const newsToDb = INITIAL_NEWS_EVENTS.map(mapNewsEventToDb);
+        await supabase.from('news_events').upsert(newsToDb);
+      } catch (err) {
+        console.log('news_events optional seed notice:', err);
+      }
 
       // Seed logo setting if available in local storage
       const existingLogo = localStorage.getItem('custom_app_logo');
@@ -767,9 +816,9 @@ export class FoundationRepository {
 
   // News & Events Data
   static getNewsEvents(): NewsEventItem[] {
-    const cached = localStorage.getItem('swf_news_events_v1');
+    const cached = localStorage.getItem(STORAGE_KEYS.NEWS_EVENTS);
     if (!cached) {
-      localStorage.setItem('swf_news_events_v1', JSON.stringify(INITIAL_NEWS_EVENTS));
+      localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(INITIAL_NEWS_EVENTS));
       return INITIAL_NEWS_EVENTS;
     }
     try {
@@ -777,6 +826,64 @@ export class FoundationRepository {
     } catch {
       return INITIAL_NEWS_EVENTS;
     }
+  }
+
+  static async saveNewsEvent(item: NewsEventItem): Promise<NewsEventItem> {
+    const list = this.getNewsEvents();
+    const index = list.findIndex(n => n.id === item.id);
+    let updated: NewsEventItem[];
+
+    if (index >= 0) {
+      updated = [...list];
+      updated[index] = item;
+    } else {
+      updated = [item, ...list];
+    }
+
+    localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(updated));
+
+    if (supabase) {
+      try {
+        const payload = mapNewsEventToDb(item);
+        const { error } = await supabase.from('news_events').upsert(payload);
+        if (error) notifySupabaseError(`Save news_events error: ${error.message}`);
+      } catch (err: any) {
+        notifySupabaseError(`Save news_events exception: ${err?.message}`);
+      }
+    }
+
+    window.dispatchEvent(new Event('repository_updated'));
+    return item;
+  }
+
+  static async deleteNewsEvent(id: string): Promise<void> {
+    const list = this.getNewsEvents().filter(n => n.id !== id);
+    localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(list));
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('news_events').delete().eq('id', id);
+        if (error) notifySupabaseError(`Delete news_events error: ${error.message}`);
+      } catch (err: any) {
+        notifySupabaseError(`Delete news_events exception: ${err?.message}`);
+      }
+    }
+
+    window.dispatchEvent(new Event('repository_updated'));
+  }
+
+  static async reorderNewsEvents(reordered: NewsEventItem[]): Promise<void> {
+    localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(reordered));
+    if (supabase) {
+      try {
+        const payload = reordered.map(mapNewsEventToDb);
+        const { error } = await supabase.from('news_events').upsert(payload);
+        if (error) notifySupabaseError(`Reorder news_events error: ${error.message}`);
+      } catch (err: any) {
+        notifySupabaseError(`Reorder news_events exception: ${err?.message}`);
+      }
+    }
+    window.dispatchEvent(new Event('repository_updated'));
   }
 
 
@@ -1155,6 +1262,23 @@ CREATE TABLE IF NOT EXISTS public.foundation_settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 7. Create News & Upcoming Events Table
+CREATE TABLE IF NOT EXISTS public.news_events (
+  id TEXT PRIMARY KEY,
+  title_en TEXT NOT NULL,
+  title_hi TEXT,
+  title_or TEXT,
+  date TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'news',
+  location TEXT,
+  summary_en TEXT,
+  summary_hi TEXT,
+  summary_or TEXT,
+  image_url TEXT,
+  is_upcoming BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Grant privileges to anon and authenticated roles
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, postgres, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, postgres, service_role;
@@ -1166,6 +1290,7 @@ ALTER TABLE public.assistance_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.office_bearers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gallery ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.foundation_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.news_events ENABLE ROW LEVEL SECURITY;
 
 -- Create Open RLS Policies for Anon & Authenticated users
 DROP POLICY IF EXISTS "Public access drives" ON public.drives;
@@ -1186,7 +1311,10 @@ CREATE POLICY "Public access gallery" ON public.gallery FOR ALL TO public USING 
 DROP POLICY IF EXISTS "Public access foundation_settings" ON public.foundation_settings;
 CREATE POLICY "Public access foundation_settings" ON public.foundation_settings FOR ALL TO public USING (true) WITH CHECK (true);
 
--- 7. Storage Bucket Setup & Policies
+DROP POLICY IF EXISTS "Public access news_events" ON public.news_events;
+CREATE POLICY "Public access news_events" ON public.news_events FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- 8. Storage Bucket Setup & Policies
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES ('foundation_images', 'foundation_images', true, 52428800, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
 ON CONFLICT (id) DO UPDATE SET public = true;

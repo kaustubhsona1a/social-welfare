@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Language, DonationDrive, OfficeBearer, SuccessStory, GalleryItem } from './types';
+import { Language, DonationDrive, OfficeBearer, SuccessStory, GalleryItem, NewsEventItem } from './types';
 import { FoundationRepository } from './lib/supabase';
 
 // Components
@@ -33,12 +33,14 @@ export default function App() {
   const [leadership, setLeadership] = useState<OfficeBearer[]>([]);
   const [stories, setStories] = useState<SuccessStory[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [newsEvents, setNewsEvents] = useState<NewsEventItem[]>([]);
 
   const loadRepositoryData = () => {
     setDrives(FoundationRepository.getDrives());
     setLeadership(FoundationRepository.getLeadership());
     setStories(FoundationRepository.getStories());
     setGallery(FoundationRepository.getGallery());
+    setNewsEvents(FoundationRepository.getNewsEvents());
   };
 
   useEffect(() => {
@@ -110,7 +112,10 @@ export default function App() {
         />
 
         {/* News & Events & Media */}
-        <NewsAndEventsSection currentLang={currentLang} />
+        <NewsAndEventsSection 
+          items={newsEvents}
+          currentLang={currentLang} 
+        />
 
         {/* Donate & Impact Section (UPI Barcode, Bank Details, Success Stories) */}
         <DonateAndImpact

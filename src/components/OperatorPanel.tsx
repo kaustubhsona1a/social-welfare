@@ -26,11 +26,17 @@ import {
   ChevronUp,
   ChevronDown,
   ArrowUpDown,
-  Move
+  Move,
+  Newspaper,
+  Calendar,
+  MapPin,
+  Bell,
+  Megaphone,
+  Tag
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { FoundationRepository, isSupabaseConfigured } from '../lib/supabase';
-import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest, PaymentInfo } from '../types';
+import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest, PaymentInfo, NewsEventItem } from '../types';
 import { transliterateNameToOdia, translateDesignationToOdia, hasOdiaScript, getOdiaName, getOdiaRole } from '../lib/odiaTranslator';
 
 interface OperatorPanelProps {
@@ -50,7 +56,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'leadership' | 'drives' | 'gallery' | 'upload' | 'requests'>('leadership');
+  const [activeTab, setActiveTab] = useState<'leadership' | 'drives' | 'news' | 'gallery' | 'upload' | 'requests'>('leadership');
   const [uploading, setUploading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -80,6 +86,24 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [newDriveCategory, setNewDriveCategory] = useState<'ration' | 'cloth' | 'medical' | 'flood'>('ration');
   const [driveImagePreview, setDriveImagePreview] = useState<string | null>(null);
 
+  // --- NEWS & UPCOMING EVENTS STATE ---
+  const [newsFilter, setNewsFilter] = useState<'all' | 'news' | 'event' | 'press' | 'upcoming'>('all');
+  const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
+  const [editNewsData, setEditNewsData] = useState<Partial<NewsEventItem>>({});
+
+  const [showAddNews, setShowAddNews] = useState(false);
+  const [newNewsTitleEn, setNewNewsTitleEn] = useState('');
+  const [newNewsTitleHi, setNewNewsTitleHi] = useState('');
+  const [newNewsTitleOr, setNewNewsTitleOr] = useState('');
+  const [newNewsCategory, setNewNewsCategory] = useState<'news' | 'event' | 'press'>('news');
+  const [newNewsDate, setNewNewsDate] = useState('');
+  const [newNewsLocation, setNewNewsLocation] = useState('');
+  const [newNewsSummaryEn, setNewNewsSummaryEn] = useState('');
+  const [newNewsSummaryHi, setNewNewsSummaryHi] = useState('');
+  const [newNewsSummaryOr, setNewNewsSummaryOr] = useState('');
+  const [newNewsIsUpcoming, setNewNewsIsUpcoming] = useState(false);
+  const [newsImagePreview, setNewsImagePreview] = useState<string | null>(null);
+
   // --- GALLERY MULTIPLE UPLOAD STATE ---
   const [newGalleryTitle, setNewGalleryTitle] = useState('');
   const [newGalleryCategory, setNewGalleryCategory] = useState<GalleryItem['category']>('relief');
@@ -103,6 +127,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const leaderPhotoInputRef = useRef<HTMLInputElement>(null);
   const drivePhotoInputRef = useRef<HTMLInputElement>(null);
   const upiQrInputRef = useRef<HTMLInputElement>(null);
+  const newsPhotoInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -134,6 +159,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const galleryItems = FoundationRepository.getGallery();
   const drives = FoundationRepository.getDrives();
   const requests = FoundationRepository.getAssistanceRequests();
+  const newsEvents = FoundationRepository.getNewsEvents();
 
   const notify = (msg: string) => {
     setToastMessage(msg);
@@ -583,6 +609,126 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     }
   };
 
+  // ----------------------------------------------------
+  // NEWS & UPCOMING EVENTS HANDLERS
+  // ----------------------------------------------------
+  const handleStartEditNews = (item: NewsEventItem) => {
+    setEditingNewsId(item.id);
+    setEditNewsData({ ...item });
+  };
+
+  const handleCancelNewsEdit = () => {
+    setEditingNewsId(null);
+    setEditNewsData({});
+  };
+
+  const handleSaveNewsEdit = async () => {
+    if (!editingNewsId || !editNewsData) return;
+    if (!editNewsData.titleEn?.trim()) {
+      alert('English title is required.');
+      return;
+    }
+
+    setUploading(true);
+    const existing = newsEvents.find(n => n.id === editingNewsId);
+    const updated: NewsEventItem = {
+      id: editingNewsId,
+      titleEn: editNewsData.titleEn.trim(),
+      titleHi: editNewsData.titleHi?.trim() || editNewsData.titleEn.trim(),
+      titleOr: editNewsData.titleOr?.trim() || editNewsData.titleEn.trim(),
+      date: editNewsData.date?.trim() || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+      category: editNewsData.category || 'news',
+      location: editNewsData.location?.trim() || 'Babujang, Cuttack',
+      summaryEn: editNewsData.summaryEn?.trim() || '',
+      summaryHi: editNewsData.summaryHi?.trim() || editNewsData.summaryEn?.trim() || '',
+      summaryOr: editNewsData.summaryOr?.trim() || editNewsData.summaryEn?.trim() || '',
+      imageUrl: editNewsData.imageUrl || existing?.imageUrl || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800',
+      isUpcoming: Boolean(editNewsData.isUpcoming)
+    };
+
+    await FoundationRepository.saveNewsEvent(updated);
+    setUploading(false);
+    setEditingNewsId(null);
+    setEditNewsData({});
+    notify('News & Event item updated successfully!');
+  };
+
+  const handleToggleUpcomingNews = async (item: NewsEventItem) => {
+    const updated: NewsEventItem = {
+      ...item,
+      isUpcoming: !item.isUpcoming
+    };
+    setUploading(true);
+    await FoundationRepository.saveNewsEvent(updated);
+    setUploading(false);
+    notify(updated.isUpcoming ? 'Marked as Upcoming Event!' : 'Removed Upcoming badge.');
+  };
+
+  const handleDeleteNews = async (id: string, titleEn: string) => {
+    if (confirm(`Are you sure you want to delete "${titleEn}"?`)) {
+      setUploading(true);
+      await FoundationRepository.deleteNewsEvent(id);
+      setUploading(false);
+      notify('News item deleted.');
+    }
+  };
+
+  const handleNewsPhotoUpload = async (item: NewsEventItem, file: File) => {
+    try {
+      setUploading(true);
+      const imageUrl = await FoundationRepository.uploadImage(file, 'news');
+      const updated: NewsEventItem = { ...item, imageUrl };
+      await FoundationRepository.saveNewsEvent(updated);
+      setUploading(false);
+      notify('News cover photo updated successfully!');
+    } catch (err: any) {
+      setUploading(false);
+      alert(`Photo upload failed: ${err?.message || 'Error uploading image'}`);
+    }
+  };
+
+  const handleAddNewsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNewsTitleEn.trim()) {
+      alert('Please provide a title in English.');
+      return;
+    }
+
+    const newItem: NewsEventItem = {
+      id: `news-${Date.now()}`,
+      titleEn: newNewsTitleEn.trim(),
+      titleHi: newNewsTitleHi.trim() || newNewsTitleEn.trim(),
+      titleOr: newNewsTitleOr.trim() || newNewsTitleEn.trim(),
+      date: newNewsDate.trim() || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+      category: newNewsCategory,
+      location: newNewsLocation.trim() || 'Babujang, Cuttack',
+      summaryEn: newNewsSummaryEn.trim(),
+      summaryHi: newNewsSummaryHi.trim() || newNewsSummaryEn.trim(),
+      summaryOr: newNewsSummaryOr.trim() || newNewsSummaryEn.trim(),
+      imageUrl: newsImagePreview || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800',
+      isUpcoming: newNewsIsUpcoming
+    };
+
+    setUploading(true);
+    await FoundationRepository.saveNewsEvent(newItem);
+    setUploading(false);
+
+    // Reset Form
+    setNewNewsTitleEn('');
+    setNewNewsTitleHi('');
+    setNewNewsTitleOr('');
+    setNewNewsDate('');
+    setNewNewsLocation('');
+    setNewNewsSummaryEn('');
+    setNewNewsSummaryHi('');
+    setNewNewsSummaryOr('');
+    setNewNewsIsUpcoming(false);
+    setNewsImagePreview(null);
+    setShowAddNews(false);
+
+    notify('New News/Event published successfully!');
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 flex flex-col my-4 max-h-[90vh]">
@@ -669,6 +815,20 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
             <span className="flex items-center gap-1.5">
               <HeartHandshake className="w-3.5 h-3.5" />
               <span>Relief Drives</span>
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('news')}
+            className={`px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all ${
+              activeTab === 'news'
+                ? 'bg-white text-emerald-800 border-t-2 border-emerald-600 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <Newspaper className="w-3.5 h-3.5" />
+              <span>News & Events ({newsEvents.length})</span>
             </span>
           </button>
 
@@ -1376,7 +1536,655 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           )}
 
           {/* ======================================================= */}
-          {/* TAB 3: GALLERY                                          */}
+          {/* TAB 3: NEWS & UPCOMING EVENTS                           */}
+          {/* ======================================================= */}
+          {activeTab === 'news' && (
+            <div className="space-y-4">
+              {/* Header Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Newspaper className="w-4 h-4 text-sky-600" />
+                    <h4 className="font-bold text-slate-800 text-sm">News, Events & Press Releases</h4>
+                    <span className="bg-sky-100 text-sky-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                      {newsEvents.length} Items
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Publish updates, relief announcements, press releases, and upcoming community drives.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowAddNews(!showAddNews);
+                    setEditingNewsId(null);
+                  }}
+                  className="px-3.5 py-1.5 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shrink-0 shadow-2xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{showAddNews ? 'Close Add Form' : 'Post News / Event'}</span>
+                </button>
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200">
+                {(['all', 'news', 'event', 'press', 'upcoming'] as const).map(tab => {
+                  const count = tab === 'all' 
+                    ? newsEvents.length 
+                    : tab === 'upcoming' 
+                    ? newsEvents.filter(n => n.isUpcoming).length 
+                    : newsEvents.filter(n => n.category === tab).length;
+
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setNewsFilter(tab)}
+                      className={`px-3 py-1 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
+                        newsFilter === tab
+                          ? 'bg-white text-sky-800 font-semibold shadow-2xs border border-slate-200'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                      }`}
+                    >
+                      <span className="capitalize">
+                        {tab === 'all' ? 'All Updates' : tab === 'press' ? 'Press Releases' : tab === 'upcoming' ? 'Upcoming Only' : tab}
+                      </span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                        newsFilter === tab ? 'bg-sky-100 text-sky-800' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ADD NEWS / EVENT FORM */}
+              {showAddNews && (
+                <form onSubmit={handleAddNewsSubmit} className="p-4 sm:p-5 bg-sky-50/50 rounded-xl border border-sky-200 space-y-4 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between border-b border-sky-200 pb-2">
+                    <span className="text-xs font-bold text-sky-900 flex items-center gap-1.5">
+                      <Plus className="w-4 h-4 text-sky-700" />
+                      Create New Article or Upcoming Event
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddNews(false)}
+                      className="text-xs text-slate-500 hover:text-slate-800"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Category Selection */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Category *</label>
+                      <select
+                        value={newNewsCategory}
+                        onChange={e => setNewNewsCategory(e.target.value as any)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                      >
+                        <option value="news">Community News / Announcement</option>
+                        <option value="event">Upcoming Event / Camp</option>
+                        <option value="press">Press Release / Media Statement</option>
+                      </select>
+                    </div>
+
+                    {/* Upcoming Flag */}
+                    <div className="flex items-center pt-5">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={newNewsIsUpcoming}
+                          onChange={e => setNewNewsIsUpcoming(e.target.checked)}
+                          className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500"
+                        />
+                        <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                          <Bell className="w-3.5 h-3.5 text-red-500" />
+                          Mark as Highlighted Upcoming Event
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* English Title */}
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-medium text-slate-700">Headline / Title (English) *</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newNewsTitleEn.trim()) {
+                              if (!newNewsTitleOr) setNewNewsTitleOr(transliterateNameToOdia(newNewsTitleEn));
+                              if (!newNewsTitleHi) setNewNewsTitleHi(newNewsTitleEn);
+                            }
+                          }}
+                          className="text-[10px] text-sky-700 hover:underline flex items-center gap-1"
+                        >
+                          <Sparkles className="w-3 h-3 text-sky-600" />
+                          Auto-fill Odia & Hindi
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Free Eye Checkup & Spectacle Camp in Cuttack"
+                        value={newNewsTitleEn}
+                        onChange={e => setNewNewsTitleEn(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium"
+                      />
+                    </div>
+
+                    {/* Odia Title */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (Odia / ଓଡ଼ିଆ)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. କଟକରେ ମାଗଣା ଚକ୍ଷୁ ଚିକିତ୍ସା ଶିବିର"
+                        value={newNewsTitleOr}
+                        onChange={e => setNewNewsTitleOr(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-odia"
+                      />
+                    </div>
+
+                    {/* Hindi Title */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (Hindi / हिन्दी)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. कटक में निःशुल्क नेत्र जांच एवं चश्मा वितरण शिविर"
+                        value={newNewsTitleHi}
+                        onChange={e => setNewNewsTitleHi(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                      />
+                    </div>
+
+                    {/* Date */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-medium text-slate-700">Date Display *</label>
+                        <div className="flex gap-1 text-[10px]">
+                          <button
+                            type="button"
+                            onClick={() => setNewNewsDate(new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }))}
+                            className="text-sky-700 hover:underline"
+                          >
+                            Today
+                          </button>
+                          <span>•</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = new Date();
+                              d.setDate(d.getDate() + 7);
+                              setNewNewsDate(d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }));
+                            }}
+                            className="text-sky-700 hover:underline"
+                          >
+                            Next Week
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 15 August 2026 or 24-26 Sept"
+                        value={newNewsDate}
+                        onChange={e => setNewNewsDate(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                      />
+                    </div>
+
+                    {/* Location */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Location / Venue</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Babujang High School Ground, Cuttack"
+                        value={newNewsLocation}
+                        onChange={e => setNewNewsLocation(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                      />
+                    </div>
+
+                    {/* Image Selector */}
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Cover Photo / Banner</label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-20 h-14 rounded-lg bg-slate-100 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0">
+                          {newsImagePreview ? (
+                            <img src={newsImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <ImageIcon className="w-6 h-6 text-slate-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            ref={newsPhotoInputRef}
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setUploading(true);
+                                try {
+                                  const url = await FoundationRepository.uploadImage(file, 'news');
+                                  setNewsImagePreview(url);
+                                } catch (err: any) {
+                                  alert(`Image upload failed: ${err?.message}`);
+                                } finally {
+                                  setUploading(false);
+                                }
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => newsPhotoInputRef.current?.click()}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 flex items-center gap-1.5"
+                          >
+                            <Camera className="w-3.5 h-3.5 text-sky-600" />
+                            <span>{newsImagePreview ? 'Change Photo' : 'Upload Cover Image'}</span>
+                          </button>
+                          <p className="text-[10px] text-slate-500 mt-1">Recommended: Landscape photo (16:9 ratio, JPG/PNG/WebP)</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Summary En */}
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Description / Summary (English) *</label>
+                      <textarea
+                        rows={2}
+                        required
+                        placeholder="Write a brief overview of the news or event..."
+                        value={newNewsSummaryEn}
+                        onChange={e => setNewNewsSummaryEn(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                      />
+                    </div>
+
+                    {/* Summary Odia */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Description (Odia / ଓଡ଼ିଆ)</label>
+                      <textarea
+                        rows={2}
+                        placeholder="ଓଡ଼ିଆ ବିବରଣୀ..."
+                        value={newNewsSummaryOr}
+                        onChange={e => setNewNewsSummaryOr(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-odia"
+                      />
+                    </div>
+
+                    {/* Summary Hindi */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Description (Hindi / हिन्दी)</label>
+                      <textarea
+                        rows={2}
+                        placeholder="हिन्दी विवरण..."
+                        value={newNewsSummaryHi}
+                        onChange={e => setNewNewsSummaryHi(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-sky-200">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddNews(false)}
+                      className="px-3.5 py-1.5 text-slate-600 hover:bg-slate-200/50 rounded-lg text-xs font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={uploading}
+                      className="px-4 py-1.5 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>{uploading ? 'Publishing...' : 'Publish News / Event'}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* LIST OF NEWS ITEMS */}
+              <div className="space-y-3">
+                {(() => {
+                  const filtered = newsEvents.filter(item => {
+                    if (newsFilter === 'all') return true;
+                    if (newsFilter === 'upcoming') return item.isUpcoming;
+                    return item.category === newsFilter;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-10 bg-white rounded-xl border border-dashed border-slate-300">
+                        <Newspaper className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        <p className="text-xs text-slate-500 font-medium">No items found in this category.</p>
+                        <button
+                          onClick={() => {
+                            setNewsFilter('all');
+                            setShowAddNews(true);
+                          }}
+                          className="mt-2 text-xs text-sky-700 hover:underline font-semibold"
+                        >
+                          + Post an article or upcoming event
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return filtered.map(item => {
+                    const isEditing = editingNewsId === item.id;
+
+                    if (isEditing) {
+                      return (
+                        <div key={item.id} className="p-4 bg-amber-50/70 border border-amber-300 rounded-xl space-y-3 shadow-2xs">
+                          <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                            <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                              <Pencil className="w-3.5 h-3.5 text-amber-700" />
+                              Editing Article: {item.titleEn}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleCancelNewsEdit}
+                              className="text-xs text-slate-500 hover:text-slate-800"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Category</label>
+                              <select
+                                value={editNewsData.category || item.category}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, category: e.target.value as any }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                              >
+                                <option value="news">Community News</option>
+                                <option value="event">Upcoming Event / Camp</option>
+                                <option value="press">Press Release</option>
+                              </select>
+                            </div>
+
+                            <div className="flex items-center pt-5">
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(editNewsData.isUpcoming)}
+                                  onChange={e => setEditNewsData(prev => ({ ...prev, isUpcoming: e.target.checked }))}
+                                  className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500"
+                                />
+                                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                  <Bell className="w-3.5 h-3.5 text-red-500" />
+                                  Mark as Upcoming Event
+                                </span>
+                              </label>
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (English) *</label>
+                              <input
+                                type="text"
+                                value={editNewsData.titleEn ?? item.titleEn}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, titleEn: e.target.value }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (Odia / ଓଡ଼ିଆ)</label>
+                              <input
+                                type="text"
+                                value={editNewsData.titleOr ?? item.titleOr ?? ''}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, titleOr: e.target.value }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-odia"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (Hindi / हिन्दी)</label>
+                              <input
+                                type="text"
+                                value={editNewsData.titleHi ?? item.titleHi ?? ''}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, titleHi: e.target.value }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Date Display</label>
+                              <input
+                                type="text"
+                                value={editNewsData.date ?? item.date}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, date: e.target.value }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Location / Venue</label>
+                              <input
+                                type="text"
+                                value={editNewsData.location ?? item.location}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, location: e.target.value }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                              />
+                            </div>
+
+                            {/* Photo Picker in Edit */}
+                            <div className="sm:col-span-2">
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Cover Photo</label>
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={editNewsData.imageUrl || item.imageUrl}
+                                  alt="Cover"
+                                  className="w-20 h-14 rounded-lg object-cover border border-slate-300 shrink-0"
+                                />
+                                <div className="flex-1">
+                                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 cursor-pointer">
+                                    <Camera className="w-3.5 h-3.5 text-sky-600" />
+                                    <span>Upload New Image</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          setUploading(true);
+                                          try {
+                                            const url = await FoundationRepository.uploadImage(file, 'news');
+                                            setEditNewsData(prev => ({ ...prev, imageUrl: url }));
+                                          } catch (err: any) {
+                                            alert(`Image upload error: ${err?.message}`);
+                                          } finally {
+                                            setUploading(false);
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Summary (English)</label>
+                              <textarea
+                                rows={2}
+                                value={editNewsData.summaryEn ?? item.summaryEn}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, summaryEn: e.target.value }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Summary (Odia)</label>
+                              <textarea
+                                rows={2}
+                                value={editNewsData.summaryOr ?? item.summaryOr ?? ''}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, summaryOr: e.target.value }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-odia"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Summary (Hindi)</label>
+                              <textarea
+                                rows={2}
+                                value={editNewsData.summaryHi ?? item.summaryHi ?? ''}
+                                onChange={e => setEditNewsData(prev => ({ ...prev, summaryHi: e.target.value }))}
+                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end gap-2 pt-2 border-t border-amber-200">
+                            <button
+                              type="button"
+                              onClick={handleCancelNewsEdit}
+                              className="px-3 py-1 text-slate-600 hover:bg-slate-200/50 rounded-lg text-xs font-semibold"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSaveNewsEdit}
+                              disabled={uploading}
+                              className="px-4 py-1 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              <span>{uploading ? 'Saving...' : 'Save Article Changes'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div 
+                        key={item.id} 
+                        className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                      >
+                        <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                          {/* Direct Cover Photo Upload Button */}
+                          <div className="relative group shrink-0" title="Click or hover to change photo">
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.titleEn} 
+                              className="w-16 h-16 rounded-lg object-cover border border-slate-200" 
+                            />
+                            <label className="absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                              <Camera className="w-4 h-4 text-white" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleNewsPhotoUpload(item, file);
+                                }}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                item.category === 'press'
+                                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                  : item.category === 'event'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              }`}>
+                                {item.category === 'press' ? 'Press Release' : item.category === 'event' ? 'Event' : 'News'}
+                              </span>
+
+                              {item.isUpcoming && (
+                                <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-[10px] font-bold border border-red-200 flex items-center gap-1">
+                                  <Bell className="w-2.5 h-2.5" />
+                                  Upcoming
+                                </span>
+                              )}
+
+                              <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-slate-400" />
+                                {item.date}
+                              </span>
+
+                              {item.location && (
+                                <span className="text-[11px] text-slate-500 hidden md:flex items-center gap-1">
+                                  <span>•</span>
+                                  <MapPin className="w-3 h-3 text-slate-400" />
+                                  <span className="truncate max-w-[150px]">{item.location}</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <h5 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1">
+                              {item.titleEn}
+                            </h5>
+
+                            {item.titleOr && (
+                              <p className="text-[11px] text-slate-600 font-odia line-clamp-1">
+                                {item.titleOr}
+                              </p>
+                            )}
+
+                            <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                              {item.summaryEn}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                          {/* Toggle Upcoming button */}
+                          <button
+                            onClick={() => handleToggleUpcomingNews(item)}
+                            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
+                              item.isUpcoming
+                                ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                                : 'text-slate-500 hover:bg-slate-100'
+                            }`}
+                            title={item.isUpcoming ? 'Remove Upcoming badge' : 'Mark as Upcoming event'}
+                          >
+                            <Bell className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Edit Details button */}
+                          <button
+                            onClick={() => handleStartEditNews(item)}
+                            className="p-1.5 text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors"
+                            title="Edit News Article"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Delete button */}
+                          <button
+                            onClick={() => handleDeleteNews(item.id, item.titleEn)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Article"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================= */}
+          {/* TAB 4: GALLERY                                          */}
           {/* ======================================================= */}
           {activeTab === 'gallery' && (
             <div className="space-y-4">

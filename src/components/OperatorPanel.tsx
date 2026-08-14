@@ -32,7 +32,11 @@ import {
   MapPin,
   Bell,
   Megaphone,
-  Tag
+  Tag,
+  Video,
+  Play,
+  Film,
+  Link as LinkIcon
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { FoundationRepository, isSupabaseConfigured } from '../lib/supabase';
@@ -104,12 +108,30 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [newNewsIsUpcoming, setNewNewsIsUpcoming] = useState(false);
   const [newsImagePreview, setNewsImagePreview] = useState<string | null>(null);
 
-  // --- GALLERY MULTIPLE UPLOAD STATE ---
+  // --- GALLERY STATE (PHOTOS & VIDEOS) ---
+  const [galleryTabMode, setGalleryTabMode] = useState<'photo' | 'video'>('photo');
+  const [galleryFilter, setGalleryFilter] = useState<'all' | 'photo' | 'video'>('all');
   const [newGalleryTitle, setNewGalleryTitle] = useState('');
   const [newGalleryCategory, setNewGalleryCategory] = useState<GalleryItem['category']>('relief');
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState<File[]>([]);
   const [galleryFilePreviews, setGalleryFilePreviews] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+
+  // Video Upload States
+  const [videoUploadMode, setVideoUploadMode] = useState<'file' | 'link'>('file');
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFilePreview, setVideoFilePreview] = useState<string | null>(null);
+  const [videoUrlInput, setVideoUrlInput] = useState('');
+  const [videoDurationInput, setVideoDurationInput] = useState('');
+  const [videoTitleEn, setVideoTitleEn] = useState('');
+  const [videoTitleOr, setVideoTitleOr] = useState('');
+  const [videoTitleHi, setVideoTitleHi] = useState('');
+  const [videoCategory, setVideoCategory] = useState<GalleryItem['category']>('relief');
+  const [videoLocation, setVideoLocation] = useState('Babujang, Cuttack');
+  const [videoDate, setVideoDate] = useState(new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
+  const [videoPosterFile, setVideoPosterFile] = useState<File | null>(null);
+  const [videoPosterPreview, setVideoPosterPreview] = useState<string | null>(null);
+  const [videoPreviewModalItem, setVideoPreviewModalItem] = useState<GalleryItem | null>(null);
 
   // --- BRANDING & BACKGROUND STATE ---
   const [desktopBgPreview, setDesktopBgPreview] = useState<string | null>(FoundationRepository.getDesktopHeroBg());
@@ -128,6 +150,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const drivePhotoInputRef = useRef<HTMLInputElement>(null);
   const upiQrInputRef = useRef<HTMLInputElement>(null);
   const newsPhotoInputRef = useRef<HTMLInputElement>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const videoPosterInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -537,8 +561,17 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   };
 
   // ----------------------------------------------------
-  // GALLERY MULTIPLE PHOTO UPLOAD
+  // GALLERY PHOTO & VIDEO UPLOAD HANDLERS
   // ----------------------------------------------------
+  const getYouTubeThumbnail = (url: string): string | null => {
+    if (!url) return null;
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    if (ytMatch && ytMatch[1]) {
+      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+    }
+    return null;
+  };
+
   const handleGalleryFilesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files: File[] = Array.from(e.target.files);
@@ -579,6 +612,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           titleEn: itemTitle,
           titleOr: itemTitle,
           category: newGalleryCategory,
+          mediaType: 'photo',
           imageUrl,
           date: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
           location: 'Babujang, Cuttack'
@@ -599,13 +633,127 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     }
   };
 
+  // Video Handlers
+  const handleVideoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 150 * 1024 * 1024) {
+      alert('Video file is larger than 150MB. Please choose a smaller video or compress it.');
+      return;
+    }
+
+    setVideoFile(file);
+    const preview = URL.createObjectURL(file);
+    setVideoFilePreview(preview);
+
+    // Auto generate video thumbnail from video frame
+    try {
+      setUploadProgress('Generating video thumbnail...');
+      const thumb = await FoundationRepository.generateVideoThumbnail(file);
+      setVideoPosterPreview(thumb);
+    } catch {
+      // ignore
+    } finally {
+      setUploadProgress(null);
+    }
+  };
+
+  const handleVideoPosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVideoPosterFile(file);
+      setVideoPosterPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleVideoUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (videoUploadMode === 'file' && !videoFile) {
+      alert('Please select a video file (MP4, WebM, or MOV).');
+      return;
+    }
+
+    if (videoUploadMode === 'link' && !videoUrlInput.trim()) {
+      alert('Please enter a valid YouTube, Vimeo or MP4 video URL.');
+      return;
+    }
+
+    if (!videoTitleEn.trim()) {
+      alert('Please provide a title for the video.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress('Processing video upload...');
+
+    try {
+      let finalVideoUrl = '';
+
+      if (videoUploadMode === 'file' && videoFile) {
+        setUploadProgress('Uploading video file to storage...');
+        finalVideoUrl = await FoundationRepository.uploadMedia(videoFile, 'videos');
+      } else {
+        finalVideoUrl = videoUrlInput.trim();
+      }
+
+      let finalPosterUrl = videoPosterPreview || '';
+
+      if (videoPosterFile) {
+        setUploadProgress('Uploading cover poster...');
+        finalPosterUrl = await FoundationRepository.uploadImage(videoPosterFile, 'gallery_posters');
+      } else if (!finalPosterUrl) {
+        const ytThumb = getYouTubeThumbnail(finalVideoUrl);
+        if (ytThumb) {
+          finalPosterUrl = ytThumb;
+        } else {
+          finalPosterUrl = 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800';
+        }
+      }
+
+      const newVideoItem: GalleryItem = {
+        id: `vid-${Date.now()}`,
+        titleEn: videoTitleEn.trim(),
+        titleHi: videoTitleHi.trim() || undefined,
+        titleOr: videoTitleOr.trim() || videoTitleEn.trim(),
+        category: videoCategory,
+        mediaType: 'video',
+        videoUrl: finalVideoUrl,
+        imageUrl: finalPosterUrl,
+        date: videoDate.trim() || new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
+        location: videoLocation.trim() || 'Babujang, Cuttack',
+        duration: videoDurationInput.trim() || undefined
+      };
+
+      await FoundationRepository.saveGalleryItem(newVideoItem);
+      notify('Video posted successfully to Gallery!');
+
+      // Reset form
+      setVideoFile(null);
+      setVideoFilePreview(null);
+      setVideoPosterFile(null);
+      setVideoPosterPreview(null);
+      setVideoUrlInput('');
+      setVideoDurationInput('');
+      setVideoTitleEn('');
+      setVideoTitleHi('');
+      setVideoTitleOr('');
+    } catch (err: any) {
+      alert(`Failed to save video: ${err?.message || 'Error'}`);
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+    }
+  };
+
   const handleDeleteGallery = async (id: string) => {
-    if (confirm('Delete this image?')) {
+    if (confirm('Delete this item from gallery?')) {
       setUploading(true);
       await FoundationRepository.deleteGalleryItem(id);
       setUploading(false);
       setGalleryTick(prev => prev + 1);
-      notify('Photo deleted successfully.');
+      notify('Gallery item deleted successfully.');
     }
   };
 
@@ -2184,153 +2332,660 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           )}
 
           {/* ======================================================= */}
-          {/* TAB 4: GALLERY                                          */}
+          {/* TAB 4: GALLERY (PHOTOS & VIDEOS)                         */}
           {/* ======================================================= */}
           {activeTab === 'gallery' && (
             <div className="space-y-4">
-              {/* Batch Upload Form with Multiple Files Support */}
-              <form onSubmit={handleBatchGalleryUpload} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between border-b pb-2">
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4 text-emerald-600" />
-                    <span className="text-xs font-bold text-slate-800">Batch Photo Upload (Multiple Selection)</span>
-                  </div>
-                  {selectedGalleryFiles.length > 0 && (
-                    <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                      {selectedGalleryFiles.length} photo{selectedGalleryFiles.length > 1 ? 's' : ''} ready
-                    </span>
-                  )}
+              
+              {/* Gallery Top Navigation: Switch between Photos & Video Posting */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGalleryTabMode('photo')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      galleryTabMode === 'photo'
+                        ? 'bg-emerald-700 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Batch Photo Upload</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGalleryTabMode('video')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      galleryTabMode === 'video'
+                        ? 'bg-rose-700 text-white shadow-xs'
+                        : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200'
+                    }`}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Upload Video / Reel / Link</span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-1">
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Select Photos (Multiple)</label>
-                    <input
-                      type="file"
-                      multiple
-                      ref={galleryInputRef}
-                      onChange={handleGalleryFilesSelect}
-                      accept="image/*"
-                      className="hidden"
-                    />
+                {/* Filter Pills */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400 font-medium mr-1">Filter Media:</span>
+                  {(['all', 'photo', 'video'] as const).map((mode) => {
+                    const isSelected = galleryFilter === mode;
+                    const count = mode === 'all' 
+                      ? galleryItems.length 
+                      : mode === 'photo'
+                      ? galleryItems.filter(i => i.mediaType !== 'video' && !i.videoUrl).length
+                      : galleryItems.filter(i => i.mediaType === 'video' || Boolean(i.videoUrl)).length;
+
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setGalleryFilter(mode)}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-sky-900 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {mode === 'all' ? 'All' : mode === 'photo' ? 'Photos' : 'Videos'} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 1. PHOTO BATCH UPLOAD FORM */}
+              {galleryTabMode === 'photo' && (
+                <form onSubmit={handleBatchGalleryUpload} className="p-4 bg-white rounded-xl border border-emerald-200 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-bold text-slate-800">Batch Photo Upload (Multiple Selection)</span>
+                    </div>
+                    {selectedGalleryFiles.length > 0 && (
+                      <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        {selectedGalleryFiles.length} photo{selectedGalleryFiles.length > 1 ? 's' : ''} ready
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Select Photos (Multiple)</label>
+                      <input
+                        type="file"
+                        multiple
+                        ref={galleryInputRef}
+                        onChange={handleGalleryFilesSelect}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="w-full px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 flex items-center justify-center gap-2"
+                      >
+                        <Camera className="w-4 h-4 text-emerald-600" />
+                        <span>{selectedGalleryFiles.length > 0 ? `Add More Photos (${selectedGalleryFiles.length})` : 'Choose Photos (Select Multiple)'}</span>
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Caption / Title Prefix</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Flood Relief Distribution"
+                        value={newGalleryTitle}
+                        onChange={e => setNewGalleryTitle(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Category</label>
+                      <select
+                        value={newGalleryCategory}
+                        onChange={e => setNewGalleryCategory(e.target.value as any)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                      >
+                        <option value="relief">Relief & Food Drive</option>
+                        <option value="medical">Medical Camp</option>
+                        <option value="cultural">Cultural & Festival</option>
+                        <option value="distribution">Blanket & Clothes</option>
+                        <option value="food">Annadanam / Free Meals</option>
+                        <option value="clothing">Vastradaan</option>
+                        <option value="community">Community Initiatives</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Selected Files Preview Grid */}
+                  {galleryFilePreviews.length > 0 && (
+                    <div className="pt-2">
+                      <div className="text-[11px] font-medium text-slate-500 mb-2">
+                        Selected Photos Preview ({galleryFilePreviews.length}):
+                      </div>
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-36 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200">
+                        {galleryFilePreviews.map((previewUrl, idx) => (
+                          <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-300 bg-white">
+                            <img src={previewUrl} alt={`Selected preview ${idx + 1}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveGalleryPreview(idx)}
+                              className="absolute top-1 right-1 p-0.5 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity"
+                              title="Remove photo"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Progress Status */}
+                  {uploadProgress && (
+                    <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-center animate-pulse">
+                      {uploadProgress}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                    {selectedGalleryFiles.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedGalleryFiles([]);
+                          setGalleryFilePreviews([]);
+                        }}
+                        className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
                     <button
-                      type="button"
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="w-full px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 flex items-center justify-center gap-2"
+                      type="submit"
+                      disabled={uploading || selectedGalleryFiles.length === 0}
+                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-2xs"
                     >
-                      <Camera className="w-4 h-4 text-emerald-600" />
-                      <span>{selectedGalleryFiles.length > 0 ? `Add More Photos (${selectedGalleryFiles.length})` : 'Choose Photos (Select Multiple)'}</span>
+                      {uploading 
+                        ? 'Uploading Photos...' 
+                        : `Upload ${selectedGalleryFiles.length > 0 ? selectedGalleryFiles.length : ''} Photo${selectedGalleryFiles.length > 1 ? 's' : ''} to Gallery`
+                      }
                     </button>
                   </div>
+                </form>
+              )}
 
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Caption / Title Prefix</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Flood Relief Distribution"
-                      value={newGalleryTitle}
-                      onChange={e => setNewGalleryTitle(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Category</label>
-                    <select
-                      value={newGalleryCategory}
-                      onChange={e => setNewGalleryCategory(e.target.value as any)}
-                      className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
-                    >
-                      <option value="relief">Relief & Food Drive</option>
-                      <option value="medical">Medical Camp</option>
-                      <option value="cultural">Cultural & Festival</option>
-                      <option value="distribution">Blanket & Clothes</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Selected Files Preview Grid */}
-                {galleryFilePreviews.length > 0 && (
-                  <div className="pt-2">
-                    <div className="text-[11px] font-medium text-slate-500 mb-2">
-                      Selected Photos Preview ({galleryFilePreviews.length}):
+              {/* 2. VIDEO UPLOAD / LINK POSTING FORM */}
+              {galleryTabMode === 'video' && (
+                <form onSubmit={handleVideoUploadSubmit} className="p-4 bg-white rounded-xl border border-rose-200 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-rose-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-rose-100 text-rose-700 rounded-lg">
+                        <Video className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 block">Post Field Video / Documentary / Reel</span>
+                        <span className="text-[10px] text-slate-500">Upload video files (MP4/WebM) or embed YouTube links with auto thumbnail</span>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-36 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200">
-                      {galleryFilePreviews.map((previewUrl, idx) => (
-                        <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-300 bg-white">
-                          <img src={previewUrl} alt={`Selected preview ${idx + 1}`} className="w-full h-full object-cover" />
+
+                    {/* Mode Toggle: File vs Link */}
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setVideoUploadMode('file')}
+                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+                          videoUploadMode === 'file'
+                            ? 'bg-white text-rose-900 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Upload Video File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setVideoUploadMode('link')}
+                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+                          videoUploadMode === 'link'
+                            ? 'bg-white text-rose-900 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        YouTube / Video Link
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Video Source Input Area */}
+                  {videoUploadMode === 'file' ? (
+                    <div className="p-4 bg-rose-50/50 rounded-xl border border-dashed border-rose-300 text-center space-y-3">
+                      <input
+                        type="file"
+                        ref={videoFileInputRef}
+                        onChange={handleVideoFileSelect}
+                        accept="video/mp4,video/webm,video/quicktime,video/ogg"
+                        className="hidden"
+                      />
+
+                      {videoFilePreview ? (
+                        <div className="space-y-3">
+                          <div className="relative max-w-sm mx-auto aspect-video rounded-xl overflow-hidden bg-black shadow-md border border-slate-700">
+                            <video src={videoFilePreview} controls className="w-full h-full object-contain" />
+                          </div>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-xs font-medium text-slate-700">
+                              Selected: <span className="font-semibold text-rose-900">{videoFile?.name}</span> ({((videoFile?.size || 0) / (1024 * 1024)).toFixed(1)} MB)
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVideoFile(null);
+                                setVideoFilePreview(null);
+                              }}
+                              className="text-xs text-red-600 hover:underline font-semibold ml-2"
+                            >
+                              Change Video
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-4">
+                          <Film className="w-8 h-8 text-rose-500 mx-auto mb-2 opacity-80" />
+                          <p className="text-xs font-semibold text-slate-800">Select an MP4, WebM, or MOV video file</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Supports up to 150MB. Thumbnail will be auto-generated.</p>
                           <button
                             type="button"
-                            onClick={() => handleRemoveGalleryPreview(idx)}
-                            className="absolute top-1 right-1 p-0.5 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity"
-                            title="Remove photo"
+                            onClick={() => videoFileInputRef.current?.click()}
+                            className="mt-3 px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-semibold shadow-xs inline-flex items-center gap-1.5"
                           >
-                            <X className="w-3 h-3" />
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Browse Video File</span>
                           </button>
                         </div>
-                      ))}
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <label className="block text-[11px] font-semibold text-slate-700">
+                        YouTube URL or Direct Video Link
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="url"
+                          placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                          value={videoUrlInput}
+                          onChange={(e) => {
+                            setVideoUrlInput(e.target.value);
+                            const ytThumb = getYouTubeThumbnail(e.target.value);
+                            if (ytThumb && !videoPosterPreview) {
+                              setVideoPosterPreview(ytThumb);
+                            }
+                          }}
+                          className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-rose-500 font-mono"
+                        />
+                        <LinkIcon className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                      </div>
+                      <p className="text-[10px] text-slate-500">
+                        Paste any YouTube video or direct video link. The thumbnail will be extracted automatically.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Video Metadata Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Video Title (English) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Free Ration & Flood Relief Distribution in Babujang"
+                        value={videoTitleEn}
+                        onChange={e => setVideoTitleEn(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-rose-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-semibold text-slate-700">
+                          Odia Title (ଶୀର୍ଷକ)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (videoTitleEn) {
+                              setVideoTitleOr(transliterateNameToOdia(videoTitleEn));
+                            }
+                          }}
+                          className="text-[10px] text-sky-700 hover:underline flex items-center gap-0.5"
+                        >
+                          <Sparkles className="w-2.5 h-2.5" /> Auto-transliterate
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="ବାବୁଜଙ୍ଗରେ ରିଲିଫ୍ ବଣ୍ଟନ ଭିଡିଓ..."
+                        value={videoTitleOr}
+                        onChange={e => setVideoTitleOr(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-oriya"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Hindi Title (वैकल्पिक)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="बाबुजंग में राहत सामग्री वितरण..."
+                        value={videoTitleHi}
+                        onChange={e => setVideoTitleHi(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Category</label>
+                      <select
+                        value={videoCategory}
+                        onChange={e => setVideoCategory(e.target.value as any)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                      >
+                        <option value="relief">Relief & Food Drive</option>
+                        <option value="medical">Medical Camp</option>
+                        <option value="cultural">Cultural & Festival</option>
+                        <option value="distribution">Blanket & Clothes</option>
+                        <option value="food">Annadanam / Free Meals</option>
+                        <option value="clothing">Vastradaan</option>
+                        <option value="community">Community Initiatives</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Duration Tag (e.g. 2:30, 4:15)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 3:20"
+                        value={videoDurationInput}
+                        onChange={e => setVideoDurationInput(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Location</label>
+                      <input
+                        type="text"
+                        value={videoLocation}
+                        onChange={e => setVideoLocation(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Date / Month</label>
+                      <input
+                        type="text"
+                        value={videoDate}
+                        onChange={e => setVideoDate(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                      />
                     </div>
                   </div>
-                )}
 
-                {/* Upload Progress Status */}
-                {uploadProgress && (
-                  <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-center animate-pulse">
-                    {uploadProgress}
+                  {/* Poster / Thumbnail Preview & Custom Upload */}
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-12 rounded-lg bg-slate-800 overflow-hidden shrink-0 border border-slate-300 relative">
+                        {videoPosterPreview ? (
+                          <img src={videoPosterPreview} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-500 text-[10px]">
+                            Auto Frame
+                          </div>
+                        )}
+                        <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[8px] px-1 rounded">
+                          Cover
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-slate-800">Video Cover Thumbnail</div>
+                        <div className="text-[10px] text-slate-500">Auto-generated from video or choose custom image</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <input
+                        type="file"
+                        ref={videoPosterInputRef}
+                        onChange={handleVideoPosterSelect}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => videoPosterInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg border border-slate-300 inline-flex items-center gap-1"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Custom Cover Image</span>
+                      </button>
+                    </div>
                   </div>
-                )}
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                  {selectedGalleryFiles.length > 0 && (
+                  {/* Upload Progress Status */}
+                  {uploadProgress && (
+                    <div className="text-xs font-semibold text-rose-800 bg-rose-50 p-2.5 rounded-lg border border-rose-200 text-center animate-pulse">
+                      {uploadProgress}
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
                     <button
                       type="button"
                       onClick={() => {
-                        setSelectedGalleryFiles([]);
-                        setGalleryFilePreviews([]);
+                        setVideoFile(null);
+                        setVideoFilePreview(null);
+                        setVideoPosterFile(null);
+                        setVideoPosterPreview(null);
+                        setVideoUrlInput('');
+                        setVideoDurationInput('');
+                        setVideoTitleEn('');
+                        setVideoTitleHi('');
+                        setVideoTitleOr('');
                       }}
-                      className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                      className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 rounded-lg"
                     >
-                      Clear Selection
+                      Reset
                     </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={uploading || selectedGalleryFiles.length === 0}
-                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-2xs"
-                  >
-                    {uploading 
-                      ? 'Uploading Photos...' 
-                      : `Upload ${selectedGalleryFiles.length > 0 ? selectedGalleryFiles.length : ''} Photo${selectedGalleryFiles.length > 1 ? 's' : ''} to Gallery`
-                    }
-                  </button>
-                </div>
-              </form>
 
-              {/* Gallery Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {galleryItems.map(item => (
-                  <div key={item.id} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-square shadow-2xs">
-                    <img src={item.imageUrl} alt={item.titleEn} className="w-full h-full object-cover" />
-                    
-                    {/* ALWAYS VISIBLE Delete Button at Top Right for easy tapping on Mobile & Desktop */}
                     <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteGallery(item.id);
-                      }}
-                      className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full shadow-md z-20 flex items-center justify-center transition-transform"
-                      title="Delete Photo"
+                      type="submit"
+                      disabled={uploading || (videoUploadMode === 'file' && !videoFile) || (videoUploadMode === 'link' && !videoUrlInput.trim()) || !videoTitleEn.trim()}
+                      className="px-4 py-2 bg-rose-700 hover:bg-rose-800 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-2xs flex items-center gap-1.5"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Video className="w-3.5 h-3.5" />
+                      <span>{uploading ? 'Processing & Posting Video...' : 'Publish Video to Gallery'}</span>
                     </button>
-
-                    {/* Bottom Caption Bar */}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-2 pt-4 text-white text-[11px] font-medium truncate">
-                      {item.titleEn}
-                    </div>
                   </div>
-                ))}
+                </form>
+              )}
+
+              {/* Filtered Gallery Grid */}
+              {(() => {
+                const displayedItems = galleryItems.filter(item => {
+                  if (galleryFilter === 'all') return true;
+                  if (galleryFilter === 'photo') return item.mediaType !== 'video' && !item.videoUrl;
+                  if (galleryFilter === 'video') return item.mediaType === 'video' || Boolean(item.videoUrl);
+                  return true;
+                });
+
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs text-slate-500 px-1 font-medium">
+                      <span>Showing {displayedItems.length} media item{displayedItems.length !== 1 ? 's' : ''}</span>
+                      <span>Click any item to preview</span>
+                    </div>
+
+                    {displayedItems.length === 0 ? (
+                      <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-xs text-slate-400">
+                        No {galleryFilter === 'video' ? 'videos' : galleryFilter === 'photo' ? 'photos' : 'items'} found in gallery.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {displayedItems.map(item => {
+                          const isVideo = item.mediaType === 'video' || Boolean(item.videoUrl);
+
+                          return (
+                            <div 
+                              key={item.id} 
+                              onClick={() => setVideoPreviewModalItem(item)}
+                              className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-900 aspect-square shadow-2xs cursor-pointer hover:ring-2 hover:ring-sky-500 transition-all"
+                            >
+                              <img src={item.imageUrl} alt={item.titleEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform opacity-90 group-hover:opacity-100" />
+                              
+                              {/* Video Indicator Badges */}
+                              {isVideo ? (
+                                <div className="absolute top-2 left-2 z-10">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/90 text-white text-[9px] font-bold uppercase tracking-wider backdrop-blur-xs border border-rose-300/40">
+                                    <Video className="w-2.5 h-2.5" />
+                                    <span>{item.duration || 'Video'}</span>
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="absolute top-2 left-2 z-10">
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-900/70 text-slate-200 text-[9px] font-mono backdrop-blur-xs">
+                                    <ImageIcon className="w-2.5 h-2.5" />
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Play Button Overlay for Videos */}
+                              {isVideo && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                  <div className="w-9 h-9 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform border border-white/80">
+                                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Delete Button at Top Right */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteGallery(item.id);
+                                }}
+                                className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full shadow-md z-20 flex items-center justify-center transition-transform"
+                                title="Delete Media"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Bottom Caption Bar */}
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/95 via-slate-950/70 to-transparent p-2 pt-5 text-white text-[11px] leading-tight font-medium">
+                                <span className="line-clamp-1">{item.titleEn}</span>
+                                <span className="text-[9px] text-slate-300 font-light block capitalize">{item.category} • {item.date || 'Babujang'}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+            </div>
+          )}
+
+          {/* Operator Gallery Item Preview Modal */}
+          {videoPreviewModalItem && (
+            <div 
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+              onClick={() => setVideoPreviewModalItem(null)}
+            >
+              <div 
+                className="relative max-w-2xl w-full bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 text-white"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setVideoPreviewModalItem(null)}
+                  className="absolute top-3 right-3 z-30 p-2 bg-black/60 hover:bg-black text-white rounded-full transition-colors border border-white/20"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="aspect-video bg-black flex items-center justify-center max-h-[60vh]">
+                  {(() => {
+                    const isVideo = videoPreviewModalItem.mediaType === 'video' || Boolean(videoPreviewModalItem.videoUrl);
+                    const ytMatch = videoPreviewModalItem.videoUrl?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+
+                    if (isVideo && ytMatch && ytMatch[1]) {
+                      return (
+                        <iframe
+                          src={`https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`}
+                          title={videoPreviewModalItem.titleEn}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      );
+                    }
+
+                    if (isVideo && videoPreviewModalItem.videoUrl) {
+                      return (
+                        <video
+                          src={videoPreviewModalItem.videoUrl}
+                          poster={videoPreviewModalItem.imageUrl}
+                          controls
+                          autoPlay
+                          className="w-full h-full object-contain"
+                        />
+                      );
+                    }
+
+                    return (
+                      <img
+                        src={videoPreviewModalItem.imageUrl}
+                        alt={videoPreviewModalItem.titleEn}
+                        className="w-full h-full object-contain"
+                      />
+                    );
+                  })()}
+                </div>
+
+                <div className="p-4 space-y-1.5 border-t border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-950 text-sky-200 border border-sky-800 uppercase">
+                      {videoPreviewModalItem.category}
+                    </span>
+                    {videoPreviewModalItem.duration && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-950 text-rose-200 border border-rose-800">
+                        {videoPreviewModalItem.duration}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {videoPreviewModalItem.date} • {videoPreviewModalItem.location}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-semibold text-white">
+                    {videoPreviewModalItem.titleEn}
+                  </h4>
+                  {videoPreviewModalItem.titleOr && (
+                    <p className="text-xs text-sky-200 font-oriya">
+                      {videoPreviewModalItem.titleOr}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           )}

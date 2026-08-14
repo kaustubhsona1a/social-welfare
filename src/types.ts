@@ -62,12 +62,13 @@ export interface GalleryItem {
   titleEn: string;
   titleHi?: string;
   titleOr: string;
-  category: 'food' | 'clothing' | 'medical' | 'event' | 'community' | 'video' | 'press';
+  category: 'food' | 'clothing' | 'medical' | 'event' | 'community' | 'video' | 'press' | 'relief' | 'distribution' | 'cultural';
   date: string;
   imageUrl: string;
   location: string;
   mediaType?: 'photo' | 'video' | 'press';
   videoUrl?: string;
+  duration?: string;
 }
 
 export interface TransparencyDocument {

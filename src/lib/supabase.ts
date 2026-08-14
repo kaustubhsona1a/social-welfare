@@ -146,22 +146,30 @@ const mapDriveFromDb = (row: any): DonationDrive => ({
 
 const mapGalleryToDb = (g: GalleryItem) => ({
   id: g.id || 'gal-' + Date.now(),
-  title_en: g.titleEn || 'Photo',
-  title_or: g.titleOr || g.titleEn || 'Photo',
+  title_en: g.titleEn || 'Media',
+  title_hi: g.titleHi || '',
+  title_or: g.titleOr || g.titleEn || 'Media',
   category: g.category || 'relief',
   image_url: g.imageUrl || '',
   date: g.date || '',
-  location: g.location || ''
+  location: g.location || '',
+  media_type: g.mediaType || (g.videoUrl || g.category === 'video' ? 'video' : 'photo'),
+  video_url: g.videoUrl || '',
+  duration: g.duration || ''
 });
 
 const mapGalleryFromDb = (row: any): GalleryItem => ({
   id: row.id,
   titleEn: row.title_en || '',
+  titleHi: row.title_hi || '',
   titleOr: row.title_or || row.title_en || '',
   category: row.category || 'relief',
   imageUrl: row.image_url || '',
   date: row.date || '',
-  location: row.location || ''
+  location: row.location || '',
+  mediaType: (row.media_type as 'photo' | 'video' | 'press') || (row.video_url || row.category === 'video' ? 'video' : 'photo'),
+  videoUrl: row.video_url || '',
+  duration: row.duration || ''
 });
 
 const mapRequestToDb = (r: AssistanceRequest) => ({
@@ -933,6 +941,53 @@ export class FoundationRepository {
     return updated;
   }
 
+  // Media File Helper: Uploads images & videos to Supabase Storage if bucket exists, or converts to Base64
+  static async uploadMedia(file: File, folder: string = 'general'): Promise<string> {
+    return this.uploadImage(file, folder);
+  }
+
+  // Generate video poster thumbnail from a video file using HTML5 canvas
+  static async generateVideoThumbnail(file: File): Promise<string> {
+    return new Promise((resolve) => {
+      try {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        const url = URL.createObjectURL(file);
+        video.src = url;
+        video.onloadeddata = () => {
+          video.currentTime = Math.min(1.5, (video.duration || 4) / 4);
+        };
+        video.onseeked = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 360;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+              URL.revokeObjectURL(url);
+              resolve(dataUrl);
+              return;
+            }
+          } catch {
+            // fallback
+          }
+          URL.revokeObjectURL(url);
+          resolve('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800');
+        };
+        video.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800');
+        };
+      } catch {
+        resolve('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800');
+      }
+    });
+  }
+
   // Image File Helper: Uploads to Supabase Storage if bucket exists, or converts to Base64
   static async uploadImage(file: File, folder: string = 'general'): Promise<string> {
     if (supabase) {
@@ -942,10 +997,14 @@ export class FoundationRepository {
         const fileExt = file.name.split('.').pop() || 'png';
         const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
         
-        // Attempt upload to 'foundation_images' bucket
+        // Attempt upload to 'foundation_images' bucket with contentType
         const { data, error } = await supabase.storage
           .from('foundation_images')
-          .upload(fileName, file, { cacheControl: '3600', upsert: true });
+          .upload(fileName, file, { 
+            cacheControl: '3600', 
+            upsert: true,
+            contentType: file.type || undefined
+          });
 
         if (!error && data) {
           const { data: publicUrlData } = supabase.storage
@@ -953,7 +1012,7 @@ export class FoundationRepository {
             .getPublicUrl(fileName);
           
           if (publicUrlData?.publicUrl) {
-            console.log('Image uploaded to Supabase Storage:', publicUrlData.publicUrl);
+            console.log('Media uploaded to Supabase Storage:', publicUrlData.publicUrl);
             return publicUrlData.publicUrl;
           }
         } else if (error) {
@@ -1243,15 +1302,19 @@ CREATE TABLE IF NOT EXISTS public.office_bearers (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Create Photo Gallery Table
+-- 5. Create Media & Photo/Video Gallery Table
 CREATE TABLE IF NOT EXISTS public.gallery (
   id TEXT PRIMARY KEY,
   title_en TEXT NOT NULL,
+  title_hi TEXT,
   title_or TEXT,
   category TEXT NOT NULL,
   image_url TEXT NOT NULL,
   date TEXT,
   location TEXT,
+  media_type TEXT DEFAULT 'photo',
+  video_url TEXT,
+  duration TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -1314,10 +1377,10 @@ CREATE POLICY "Public access foundation_settings" ON public.foundation_settings 
 DROP POLICY IF EXISTS "Public access news_events" ON public.news_events;
 CREATE POLICY "Public access news_events" ON public.news_events FOR ALL TO public USING (true) WITH CHECK (true);
 
--- 8. Storage Bucket Setup & Policies
+-- 8. Storage Bucket Setup & Policies (Supports photos & video uploads)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('foundation_images', 'foundation_images', true, 52428800, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
-ON CONFLICT (id) DO UPDATE SET public = true;
+VALUES ('foundation_images', 'foundation_images', true, 104857600, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'video/mp4', 'video/webm', 'video/quicktime', 'video/ogg'])
+ON CONFLICT (id) DO UPDATE SET public = true, file_size_limit = 104857600;
 
 -- Storage Policies for 'foundation_images' bucket
 DROP POLICY IF EXISTS "Public Storage Read" ON storage.objects;

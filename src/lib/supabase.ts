@@ -75,7 +75,7 @@ const notifySupabaseError = (msg: string) => {
 // DB MAPPERS (camelCase TS <-> snake_case SQL)
 // ==========================================
 
-const mapLeaderToDb = (l: OfficeBearer) => {
+const mapLeaderToDb = (l: OfficeBearer, orderIndex?: number) => {
   const nameEn = l.nameEn || 'Leader';
   const roleEn = l.roleEn || 'Member';
   return {
@@ -88,7 +88,8 @@ const mapLeaderToDb = (l: OfficeBearer) => {
     bio_en: l.bioEn || '',
     bio_or: l.bioOr || '',
     phone: l.phone || '',
-    image_url: l.imageUrl || ''
+    image_url: l.imageUrl || '',
+    display_order: typeof l.order === 'number' ? l.order : (typeof orderIndex === 'number' ? orderIndex : 0)
   };
 };
 
@@ -105,7 +106,8 @@ const mapLeaderFromDb = (row: any): OfficeBearer => {
     bioEn: row.bio_en || '',
     bioOr: row.bio_or || '',
     phone: row.phone || '',
-    imageUrl: row.image_url || ''
+    imageUrl: row.image_url || '',
+    order: typeof row.display_order === 'number' ? row.display_order : undefined
   };
 };
 
@@ -299,7 +301,7 @@ export class FoundationRepository {
       this.ensureBucketExists().catch(() => {});
 
       // 1. Fetch Office Bearers
-      const { data: leadersData, error: lErr } = await supabase.from('office_bearers').select('*');
+      const { data: leadersData, error: lErr } = await supabase.from('office_bearers').select('*').order('display_order', { ascending: true });
       if (lErr) {
         notifySupabaseError(`office_bearers fetch failed: ${lErr.message}`);
       } else if (leadersData) {
@@ -505,8 +507,8 @@ export class FoundationRepository {
 
     // Sanitize stale mock data or mismatching Odia names dynamically
     let modified = false;
-    list = list.map(l => {
-      const updated = { ...l };
+    list = list.map((l, idx) => {
+      const updated = { ...l, order: typeof l.order === 'number' ? l.order : idx };
       const correctNameOr = getOdiaName(l.nameEn, l.nameOr);
       if (updated.nameOr !== correctNameOr) {
         updated.nameOr = correctNameOr;
@@ -519,6 +521,8 @@ export class FoundationRepository {
       }
       return updated;
     });
+
+    list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     if (modified || !cached) {
       localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
@@ -565,6 +569,22 @@ export class FoundationRepository {
         if (error) notifySupabaseError(`Delete office_bearer error: ${error.message}`);
       } catch (err: any) {
         notifySupabaseError(`Delete office_bearer exception: ${err?.message}`);
+      }
+    }
+    window.dispatchEvent(new Event('repository_updated'));
+  }
+
+  static async reorderLeadership(reordered: OfficeBearer[]): Promise<void> {
+    const updated = reordered.map((l, idx) => ({ ...l, order: idx }));
+    localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(updated));
+
+    if (supabase) {
+      try {
+        const payload = updated.map((l, idx) => mapLeaderToDb(l, idx));
+        const { error } = await supabase.from('office_bearers').upsert(payload);
+        if (error) notifySupabaseError(`Reorder office_bearers error: ${error.message}`);
+      } catch (err: any) {
+        notifySupabaseError(`Reorder office_bearers exception: ${err?.message}`);
       }
     }
     window.dispatchEvent(new Event('repository_updated'));

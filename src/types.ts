@@ -14,6 +14,7 @@ export interface OfficeBearer {
   bioOr: string;
   phone?: string;
   imageUrl: string;
+  order?: number;
 }
 
 export interface DonationDrive {

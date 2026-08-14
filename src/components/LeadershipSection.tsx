@@ -20,9 +20,10 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'executive' | 'advisory' | 'trustee'>('all');
 
-  const filteredTeam = activeTab === 'all'
+  const filteredTeam = (activeTab === 'all'
     ? leadership
-    : leadership.filter(m => m.category === activeTab);
+    : leadership.filter(m => m.category === activeTab)
+  ).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
     <section id="leadership" className="py-20 bg-white relative overflow-hidden">

@@ -21,12 +21,17 @@ import {
   Lock,
   LogOut,
   User,
-  Key
+  Key,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown,
+  Move
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { FoundationRepository, isSupabaseConfigured } from '../lib/supabase';
 import { GalleryItem, DonationDrive, OfficeBearer, AssistanceRequest, PaymentInfo } from '../types';
-import { transliterateNameToOdia, translateDesignationToOdia, hasOdiaScript } from '../lib/odiaTranslator';
+import { transliterateNameToOdia, translateDesignationToOdia, hasOdiaScript, getOdiaName, getOdiaRole } from '../lib/odiaTranslator';
 
 interface OperatorPanelProps {
   isOpen: boolean;
@@ -49,9 +54,11 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [uploading, setUploading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // --- LEADER EDIT / ADD STATE ---
+  // --- LEADER EDIT / ADD / REORDER STATE ---
   const [editingLeaderId, setEditingLeaderId] = useState<string | null>(null);
   const [editLeaderData, setEditLeaderData] = useState<Partial<OfficeBearer>>({});
+  const [draggedLeaderIndex, setDraggedLeaderIndex] = useState<number | null>(null);
+  const [dragOverLeaderIndex, setDragOverLeaderIndex] = useState<number | null>(null);
   
   const [showAddLeader, setShowAddLeader] = useState(false);
   const [newLeaderNameEn, setNewLeaderNameEn] = useState('');
@@ -389,6 +396,46 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   };
 
   // ----------------------------------------------------
+  // LEADER REORDERING / DRAG & DROP
+  // ----------------------------------------------------
+  const handleMoveLeader = async (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= leadership.length || fromIndex === toIndex) return;
+    const updated = [...leadership];
+    const [movedItem] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, movedItem);
+    await FoundationRepository.reorderLeadership(updated);
+    notify(`Order updated: "${movedItem.nameEn}" is now at position #${toIndex + 1}`);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedLeaderIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverLeaderIndex !== index) {
+      setDragOverLeaderIndex(index);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    const sourceIndex = draggedLeaderIndex !== null ? draggedLeaderIndex : parseInt(e.dataTransfer.getData('text/plain'), 10);
+    setDraggedLeaderIndex(null);
+    setDragOverLeaderIndex(null);
+    if (isNaN(sourceIndex) || sourceIndex === targetIndex) return;
+    await handleMoveLeader(sourceIndex, targetIndex);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedLeaderIndex(null);
+    setDragOverLeaderIndex(null);
+  };
+
+  // ----------------------------------------------------
   // DRIVE EDIT / ADD / PHOTO UPLOAD
   // ----------------------------------------------------
   const handleStartEditDrive = (drive: DonationDrive) => {
@@ -676,18 +723,35 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           {/* ======================================================= */}
           {activeTab === 'leadership' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Foundation Office Bearers ({leadership.length})
-                </h4>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <span>Foundation Office Bearers ({leadership.length})</span>
+                    <span className="text-[10px] font-normal text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Drag to Reorder
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Leaders at the top appear first on the website. Drag cards or use ↑ / ↓ arrows to rearrange priority.
+                  </p>
+                </div>
 
                 <button
                   onClick={() => setShowAddLeader(!showAddLeader)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-medium shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-medium shadow-2xs shrink-0 self-start sm:self-auto"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add New Leader</span>
                 </button>
+              </div>
+
+              {/* Order Guidance Tip */}
+              <div className="p-3 bg-sky-50/80 rounded-xl border border-sky-200 flex items-center gap-3 text-xs text-sky-950">
+                <ArrowUpDown className="w-4 h-4 text-sky-700 shrink-0" />
+                <div className="text-[11px] leading-relaxed">
+                  <span className="font-semibold text-sky-900">Live Website Display Order: </span>
+                  Grab the <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold">⋮⋮</span> handle on any card to drag up or down, or click the <span className="font-bold">↑</span> and <span className="font-bold">↓</span> buttons. Position <strong className="text-emerald-700">#1</strong> is shown first to website visitors.
+                </div>
               </div>
 
               {/* Add Leader Form (Collapsible) */}
@@ -793,14 +857,16 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                 </form>
               )}
 
-              {/* Clean Cards List */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {leadership.map((member) => {
+              {/* Drag and Drop Cards List */}
+              <div className="space-y-2.5">
+                {leadership.map((member, index) => {
                   const isEditing = editingLeaderId === member.id;
+                  const isBeingDragged = draggedLeaderIndex === index;
+                  const isDragTarget = dragOverLeaderIndex === index && draggedLeaderIndex !== index;
 
                   if (isEditing) {
                     return (
-                      <div key={member.id} className="bg-white p-4 rounded-xl border border-emerald-400 shadow-md space-y-3 sm:col-span-2">
+                      <div key={member.id} className="bg-white p-4 rounded-xl border border-emerald-400 shadow-md space-y-3">
                         <div className="flex items-center justify-between border-b pb-2">
                           <span className="text-xs font-bold text-slate-800">Edit Leader: {member.nameEn}</span>
                           <button onClick={() => setEditingLeaderId(null)} className="text-slate-400 hover:text-slate-600">
@@ -891,15 +957,56 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                   }
 
                   return (
-                    <div key={member.id} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300">
-                      <div className="flex items-center gap-3 min-w-0">
-                        {/* Direct Photo Upload Click */}
+                    <div 
+                      key={member.id} 
+                      draggable={!isEditing && !uploading}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={() => {
+                        if (dragOverLeaderIndex === index) {
+                          setDragOverLeaderIndex(null);
+                        }
+                      }}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={`bg-white p-3 sm:p-3.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 sm:gap-4 ${
+                        isBeingDragged
+                          ? 'opacity-40 border-dashed border-2 border-emerald-500 bg-emerald-50 scale-[0.99]'
+                          : isDragTarget
+                          ? 'border-2 border-emerald-500 ring-2 ring-emerald-300/60 bg-emerald-50/70 scale-[1.01] shadow-md'
+                          : 'border-slate-200 shadow-2xs hover:border-slate-300 hover:shadow-xs'
+                      }`}
+                    >
+                      {/* Left: Drag Handle & Rank Badge & Photo */}
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        {/* Drag Handle */}
+                        <div 
+                          className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 text-slate-400 hover:text-emerald-700 hover:bg-slate-100 rounded-md transition-colors shrink-0"
+                          title="Drag to reorder"
+                        >
+                          <GripVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+
+                        {/* Order Badge */}
+                        <div className="shrink-0">
+                          {index === 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] sm:text-xs font-bold tracking-tight">
+                              #1 • Visible First
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] sm:text-xs font-bold font-mono">
+                              #{index + 1}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Leader Avatar with Hover Camera Upload */}
                         <div className="relative group shrink-0">
-                          <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
                             <img src={member.imageUrl} alt={member.nameEn} className="w-full h-full object-cover" />
                           </div>
                           <label className="absolute inset-0 bg-slate-900/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                            <Camera className="w-4 h-4 text-white" />
+                            <Camera className="w-3.5 h-3.5 text-white" />
                             <input
                               type="file"
                               accept="image/*"
@@ -912,14 +1019,58 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                           </label>
                         </div>
 
+                        {/* Leader Info */}
                         <div className="min-w-0">
-                          <h5 className="font-semibold text-slate-900 text-xs truncate">{member.nameEn}</h5>
-                          <p className="text-[11px] text-emerald-700 font-medium truncate">{member.roleEn}</p>
-                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">{member.phone}</p>
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-semibold text-slate-900 text-xs sm:text-sm truncate">{member.nameEn}</h5>
+                            <span className="text-[10px] text-slate-500 font-serif hidden md:inline">({member.nameOr})</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-[11px] text-emerald-700 font-medium truncate">{member.roleEn}</p>
+                            <span className="text-slate-300 text-[10px]">•</span>
+                            <span className="text-[10px] text-slate-400 capitalize truncate">{member.category}</span>
+                          </div>
+                          {member.phone && (
+                            <p className="text-[10px] text-slate-400 font-mono hidden sm:block">{member.phone}</p>
+                          )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
+                      {/* Right: Quick Reorder Buttons (Up/Down) & Edit / Delete */}
+                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        {/* Move Up */}
+                        <button
+                          type="button"
+                          onClick={() => handleMoveLeader(index, index - 1)}
+                          disabled={index === 0}
+                          className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
+                            index === 0
+                              ? 'text-slate-300 border-slate-100 cursor-not-allowed bg-slate-50'
+                              : 'text-slate-700 hover:text-emerald-800 hover:bg-emerald-50 hover:border-emerald-200 border-slate-200'
+                          }`}
+                          title={index === 0 ? 'Already at top' : 'Move Up (Higher Priority)'}
+                        >
+                          <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+
+                        {/* Move Down */}
+                        <button
+                          type="button"
+                          onClick={() => handleMoveLeader(index, index + 1)}
+                          disabled={index === leadership.length - 1}
+                          className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
+                            index === leadership.length - 1
+                              ? 'text-slate-300 border-slate-100 cursor-not-allowed bg-slate-50'
+                              : 'text-slate-700 hover:text-emerald-800 hover:bg-emerald-50 hover:border-emerald-200 border-slate-200'
+                          }`}
+                          title={index === leadership.length - 1 ? 'Already at bottom' : 'Move Down (Lower Priority)'}
+                        >
+                          <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+
+                        <div className="w-[1px] h-4 bg-slate-200 mx-0.5 hidden sm:block" />
+
+                        {/* Edit Leader */}
                         <button
                           onClick={() => handleStartEditLeader(member)}
                           className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
@@ -927,6 +1078,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
+
+                        {/* Delete Leader */}
                         <button
                           onClick={() => handleDeleteLeader(member.id, member.nameEn)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"

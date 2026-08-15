@@ -113,8 +113,8 @@ export default function App() {
 
         {/* News & Events & Media */}
         <NewsAndEventsSection 
-          items={newsEvents}
           currentLang={currentLang} 
+          newsEvents={newsEvents}
         />
 
         {/* Donate & Impact Section (UPI Barcode, Bank Details, Success Stories) */}

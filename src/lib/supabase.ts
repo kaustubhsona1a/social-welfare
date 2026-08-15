@@ -58,7 +58,6 @@ const STORAGE_KEYS = {
   DONORS: 'swf_donors_v1',
   ASSISTANCE: 'swf_assistance_v1',
   PAYMENT: 'swf_payment_info_v1',
-  NEWS_EVENTS: 'swf_news_events_v1',
 };
 
 // Global error tracker for UI notifications
@@ -76,39 +75,39 @@ const notifySupabaseError = (msg: string) => {
 // DB MAPPERS (camelCase TS <-> snake_case SQL)
 // ==========================================
 
-const mapLeaderToDb = (l: OfficeBearer, orderIndex?: number) => {
+const mapLeaderToDb = (l: OfficeBearer, index: number = 0) => {
   const nameEn = l.nameEn || 'Leader';
   const roleEn = l.roleEn || 'Member';
   return {
     id: l.id || 'leader-' + Date.now(),
     name_en: nameEn,
-    name_or: getOdiaName(nameEn, l.nameOr),
+    name_or: l.nameOr || nameEn,
     role_en: roleEn,
-    role_or: getOdiaRole(roleEn, l.roleOr),
+    role_or: l.roleOr || roleEn,
     category: l.category || 'executive',
     bio_en: l.bioEn || '',
     bio_or: l.bioOr || '',
     phone: l.phone || '',
     image_url: l.imageUrl || '',
-    display_order: typeof l.order === 'number' ? l.order : (typeof orderIndex === 'number' ? orderIndex : 0)
+    display_order: typeof l.displayOrder === 'number' ? l.displayOrder : index
   };
 };
 
-const mapLeaderFromDb = (row: any): OfficeBearer => {
+const mapLeaderFromDb = (row: any, index: number = 0): OfficeBearer => {
   const nameEn = row.name_en || '';
   const roleEn = row.role_en || '';
   return {
     id: row.id,
     nameEn,
-    nameOr: getOdiaName(nameEn, row.name_or),
+    nameOr: row.name_or || nameEn,
     roleEn,
-    roleOr: getOdiaRole(roleEn, row.role_or),
+    roleOr: row.role_or || roleEn,
     category: row.category || 'executive',
     bioEn: row.bio_en || '',
     bioOr: row.bio_or || '',
     phone: row.phone || '',
     imageUrl: row.image_url || '',
-    order: typeof row.display_order === 'number' ? row.display_order : undefined
+    displayOrder: typeof row.display_order === 'number' ? row.display_order : index
   };
 };
 
@@ -146,30 +145,56 @@ const mapDriveFromDb = (row: any): DonationDrive => ({
 
 const mapGalleryToDb = (g: GalleryItem) => ({
   id: g.id || 'gal-' + Date.now(),
-  title_en: g.titleEn || 'Media',
-  title_hi: g.titleHi || '',
-  title_or: g.titleOr || g.titleEn || 'Media',
+  title_en: g.titleEn || 'Photo',
+  title_or: g.titleOr || g.titleEn || 'Photo',
   category: g.category || 'relief',
   image_url: g.imageUrl || '',
+  video_url: g.videoUrl || null,
+  media_type: g.mediaType || (g.videoUrl ? 'video' : 'photo'),
   date: g.date || '',
-  location: g.location || '',
-  media_type: g.mediaType || (g.videoUrl || g.category === 'video' ? 'video' : 'photo'),
-  video_url: g.videoUrl || '',
-  duration: g.duration || ''
+  location: g.location || ''
 });
 
 const mapGalleryFromDb = (row: any): GalleryItem => ({
   id: row.id,
   titleEn: row.title_en || '',
-  titleHi: row.title_hi || '',
   titleOr: row.title_or || row.title_en || '',
   category: row.category || 'relief',
   imageUrl: row.image_url || '',
+  videoUrl: row.video_url || undefined,
+  mediaType: row.media_type || (row.video_url ? 'video' : 'photo'),
   date: row.date || '',
+  location: row.location || ''
+});
+
+const mapNewsEventToDb = (n: NewsEventItem) => ({
+  id: n.id || 'news-' + Date.now(),
+  title_en: n.titleEn || '',
+  title_hi: n.titleHi || '',
+  title_or: n.titleOr || n.titleEn || '',
+  date: n.date || '',
+  category: n.category || 'news',
+  location: n.location || '',
+  summary_en: n.summaryEn || '',
+  summary_hi: n.summaryHi || '',
+  summary_or: n.summaryOr || n.summaryEn || '',
+  image_url: n.imageUrl || '',
+  is_upcoming: Boolean(n.isUpcoming)
+});
+
+const mapNewsEventFromDb = (row: any): NewsEventItem => ({
+  id: row.id,
+  titleEn: row.title_en || '',
+  titleHi: row.title_hi || '',
+  titleOr: row.title_or || row.title_en || '',
+  date: row.date || '',
+  category: row.category || 'news',
   location: row.location || '',
-  mediaType: (row.media_type as 'photo' | 'video' | 'press') || (row.video_url || row.category === 'video' ? 'video' : 'photo'),
-  videoUrl: row.video_url || '',
-  duration: row.duration || ''
+  summaryEn: row.summary_en || '',
+  summaryHi: row.summary_hi || '',
+  summaryOr: row.summary_or || row.summary_en || '',
+  imageUrl: row.image_url || '',
+  isUpcoming: Boolean(row.is_upcoming)
 });
 
 const mapRequestToDb = (r: AssistanceRequest) => ({
@@ -222,36 +247,6 @@ const mapDonorFromDb = (row: any): DonorRecord => ({
   isAnonymous: Boolean(row.is_anonymous),
   transactionRef: row.transaction_ref || undefined,
   timestamp: row.created_at ? new Date(row.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently'
-});
-
-const mapNewsEventToDb = (item: NewsEventItem) => ({
-  id: item.id || 'news-' + Date.now(),
-  title_en: item.titleEn || '',
-  title_hi: item.titleHi || '',
-  title_or: item.titleOr || '',
-  date: item.date || '',
-  category: item.category || 'news',
-  location: item.location || '',
-  summary_en: item.summaryEn || '',
-  summary_hi: item.summaryHi || '',
-  summary_or: item.summaryOr || '',
-  image_url: item.imageUrl || '',
-  is_upcoming: Boolean(item.isUpcoming)
-});
-
-const mapNewsEventFromDb = (row: any): NewsEventItem => ({
-  id: row.id,
-  titleEn: row.title_en || '',
-  titleHi: row.title_hi || '',
-  titleOr: row.title_or || '',
-  date: row.date || '',
-  category: (row.category as 'news' | 'event' | 'press') || 'news',
-  location: row.location || '',
-  summaryEn: row.summary_en || '',
-  summaryHi: row.summary_hi || '',
-  summaryOr: row.summary_or || '',
-  imageUrl: row.image_url || '',
-  isUpcoming: Boolean(row.is_upcoming)
 });
 
 // ==========================================
@@ -339,18 +334,29 @@ export class FoundationRepository {
       // Ensure storage bucket is ready
       this.ensureBucketExists().catch(() => {});
 
-      // 1. Fetch Office Bearers
-      const { data: leadersData, error: lErr } = await supabase.from('office_bearers').select('*').order('display_order', { ascending: true });
-      if (lErr) {
-        notifySupabaseError(`office_bearers fetch failed: ${lErr.message}`);
-      } else if (leadersData) {
-        if (leadersData.length > 0) {
-          const mapped = leadersData.map(mapLeaderFromDb);
-          localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(mapped));
-        } else {
-          // Seed defaults if empty in Supabase
-          await this.seedSupabaseDefaults();
+      // 1. Fetch Office Bearers (robust query that works with any schema)
+      let leadersData: any[] | null = null;
+      try {
+        const { data, error } = await supabase.from('office_bearers').select('*');
+        if (!error && data) {
+          leadersData = data;
+        } else if (error) {
+          console.warn('office_bearers fetch notice:', error.message);
         }
+      } catch (err: any) {
+        console.warn('office_bearers fetch exception:', err?.message);
+      }
+
+      if (leadersData && leadersData.length > 0) {
+        const mapped = leadersData.map((row, idx) => mapLeaderFromDb(row, idx));
+        // Sort if displayOrder was present, otherwise keep fetched order
+        mapped.sort((a, b) => {
+          if (typeof a.displayOrder === 'number' && typeof b.displayOrder === 'number') {
+            return a.displayOrder - b.displayOrder;
+          }
+          return 0;
+        });
+        localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(mapped));
       }
 
       // 2. Fetch Drives
@@ -371,7 +377,18 @@ export class FoundationRepository {
         localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(mapped));
       }
 
-      // 4. Fetch Donations
+      // 4. Fetch News & Events
+      try {
+        const { data: newsData, error: nErr } = await supabase.from('news_events').select('*');
+        if (!nErr && newsData && newsData.length > 0) {
+          const mapped = newsData.map(mapNewsEventFromDb);
+          localStorage.setItem('swf_news_events_v1', JSON.stringify(mapped));
+        }
+      } catch (err: any) {
+        console.warn('news_events table check:', err?.message);
+      }
+
+      // 5. Fetch Donations
       const { data: donationsData, error: donErr } = await supabase.from('donations').select('*');
       if (donErr) {
         notifySupabaseError(`donations fetch failed: ${donErr.message}`);
@@ -380,7 +397,7 @@ export class FoundationRepository {
         localStorage.setItem(STORAGE_KEYS.DONORS, JSON.stringify(mapped));
       }
 
-      // 5. Fetch Assistance Requests
+      // 6. Fetch Assistance Requests
       const { data: reqData, error: reqErr } = await supabase.from('assistance_requests').select('*');
       if (reqErr) {
         notifySupabaseError(`assistance_requests fetch failed: ${reqErr.message}`);
@@ -389,7 +406,7 @@ export class FoundationRepository {
         localStorage.setItem(STORAGE_KEYS.ASSISTANCE, JSON.stringify(mapped));
       }
 
-      // 6. Fetch Settings (Logo URL & Hero BG URL)
+      // 7. Fetch Settings (Logo URL & Hero BG URL)
       const { data: settingsData, error: sErr } = await supabase.from('foundation_settings').select('*');
       if (sErr) {
         notifySupabaseError(`foundation_settings fetch failed: ${sErr.message}`);
@@ -437,16 +454,6 @@ export class FoundationRepository {
         }
       }
 
-      // 7. Fetch News & Events
-      const { data: newsData, error: newsErr } = await supabase.from('news_events').select('*');
-      if (newsErr) {
-        // Table might not exist yet in fresh Supabase setups - soft warning
-        console.warn('news_events fetch notice:', newsErr.message);
-      } else if (newsData && newsData.length > 0) {
-        const mapped = newsData.map(mapNewsEventFromDb);
-        localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(mapped));
-      }
-
       window.dispatchEvent(new Event('repository_updated'));
     } catch (err: any) {
       notifySupabaseError(`Supabase sync exception: ${err?.message || 'Unknown error'}`);
@@ -457,8 +464,8 @@ export class FoundationRepository {
   static async seedSupabaseDefaults(): Promise<void> {
     if (!supabase) return;
     try {
-      // Seed leaders
-      const leadersToDb = INITIAL_LEADERSHIP.map(mapLeaderToDb);
+      // Seed leaders with order
+      const leadersToDb = INITIAL_LEADERSHIP.map((l, idx) => mapLeaderToDb(l, idx));
       const { error: lErr } = await supabase.from('office_bearers').upsert(leadersToDb);
       if (lErr) notifySupabaseError(`Seed leaders error: ${lErr.message}`);
 
@@ -472,12 +479,12 @@ export class FoundationRepository {
       const { error: gErr } = await supabase.from('gallery').upsert(galleryToDb);
       if (gErr) notifySupabaseError(`Seed gallery error: ${gErr.message}`);
 
-      // Seed news & events
+      // Seed news events
       try {
         const newsToDb = INITIAL_NEWS_EVENTS.map(mapNewsEventToDb);
         await supabase.from('news_events').upsert(newsToDb);
-      } catch (err) {
-        console.log('news_events optional seed notice:', err);
+      } catch (err: any) {
+        console.warn('Seed news events notice:', err?.message);
       }
 
       // Seed logo setting if available in local storage
@@ -553,38 +560,19 @@ export class FoundationRepository {
   // Leadership
   static getLeadership(): OfficeBearer[] {
     const cached = localStorage.getItem(STORAGE_KEYS.LEADERSHIP);
-    let list: OfficeBearer[] = INITIAL_LEADERSHIP;
-    if (cached) {
-      try {
-        list = JSON.parse(cached);
-      } catch {
-        list = INITIAL_LEADERSHIP;
-      }
+    if (!cached) {
+      localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(INITIAL_LEADERSHIP));
+      return INITIAL_LEADERSHIP;
     }
-
-    // Sanitize stale mock data or mismatching Odia names dynamically
-    let modified = false;
-    list = list.map((l, idx) => {
-      const updated = { ...l, order: typeof l.order === 'number' ? l.order : idx };
-      const correctNameOr = getOdiaName(l.nameEn, l.nameOr);
-      if (updated.nameOr !== correctNameOr) {
-        updated.nameOr = correctNameOr;
-        modified = true;
+    try {
+      const list: OfficeBearer[] = JSON.parse(cached);
+      if (Array.isArray(list)) {
+        return list.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
       }
-      const correctRoleOr = getOdiaRole(l.roleEn, l.roleOr);
-      if (updated.roleOr !== correctRoleOr) {
-        updated.roleOr = correctRoleOr;
-        modified = true;
-      }
-      return updated;
-    });
-
-    list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-    if (modified || !cached) {
-      localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
+      return INITIAL_LEADERSHIP;
+    } catch {
+      return INITIAL_LEADERSHIP;
     }
-    return list;
   }
 
   static async saveLeadershipMember(bearer: OfficeBearer): Promise<OfficeBearer> {
@@ -592,19 +580,37 @@ export class FoundationRepository {
     const index = leadership.findIndex(l => l.id === bearer.id);
     let updated: OfficeBearer[];
     if (index >= 0) {
+      const existing = leadership[index];
+      const memberWithOrder: OfficeBearer = {
+        ...bearer,
+        displayOrder: typeof bearer.displayOrder === 'number' ? bearer.displayOrder : existing.displayOrder ?? index
+      };
       updated = [...leadership];
-      updated[index] = bearer;
+      updated[index] = memberWithOrder;
     } else {
-      updated = [...leadership, bearer];
+      const newMember: OfficeBearer = {
+        ...bearer,
+        displayOrder: typeof bearer.displayOrder === 'number' ? bearer.displayOrder : leadership.length
+      };
+      updated = [...leadership, newMember];
     }
+    
+    // Sort
+    updated.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
     localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(updated));
 
     if (supabase) {
       try {
-        const payload = mapLeaderToDb(bearer);
+        const payload = mapLeaderToDb(bearer, bearer.displayOrder ?? index);
         const { error } = await supabase.from('office_bearers').upsert(payload);
         if (error) {
-          notifySupabaseError(`Save office_bearer error: ${error.message}`);
+          if (error.message && error.message.includes('display_order')) {
+            const fallbackPayload = { ...payload };
+            delete fallbackPayload.display_order;
+            await supabase.from('office_bearers').upsert(fallbackPayload);
+          } else {
+            notifySupabaseError(`Save office_bearer error: ${error.message}`);
+          }
         } else {
           console.log('Successfully saved office bearer to Supabase:', bearer.nameEn);
         }
@@ -616,9 +622,56 @@ export class FoundationRepository {
     return bearer;
   }
 
+  static async saveLeadershipOrder(orderedLeaders: OfficeBearer[]): Promise<OfficeBearer[]> {
+    const updated = orderedLeaders.map((l, index) => ({
+      ...l,
+      displayOrder: index
+    }));
+
+    localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(updated));
+
+    if (supabase) {
+      try {
+        const payload = updated.map((l, idx) => mapLeaderToDb(l, idx));
+        const { error } = await supabase.from('office_bearers').upsert(payload);
+        if (error) {
+          if (error.message && error.message.includes('display_order')) {
+            console.warn('display_order column not in table; order preserved in client local storage.');
+          } else {
+            notifySupabaseError(`Save leadership order error: ${error.message}`);
+          }
+        }
+      } catch (err: any) {
+        notifySupabaseError(`Save leadership order exception: ${err?.message}`);
+      }
+    }
+
+    window.dispatchEvent(new Event('repository_updated'));
+    return updated;
+  }
+
+  static async moveLeader(id: string, direction: 'up' | 'down'): Promise<OfficeBearer[]> {
+    const list = [...this.getLeadership()];
+    const index = list.findIndex(l => l.id === id);
+    if (index < 0) return list;
+
+    if (direction === 'up' && index > 0) {
+      const temp = list[index];
+      list[index] = list[index - 1];
+      list[index - 1] = temp;
+    } else if (direction === 'down' && index < list.length - 1) {
+      const temp = list[index];
+      list[index] = list[index + 1];
+      list[index + 1] = temp;
+    }
+
+    return this.saveLeadershipOrder(list);
+  }
+
   static async deleteLeadershipMember(id: string): Promise<void> {
     const leadership = this.getLeadership().filter(l => l.id !== id);
-    localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(leadership));
+    const reordered = leadership.map((l, idx) => ({ ...l, displayOrder: idx }));
+    localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(reordered));
 
     if (supabase) {
       try {
@@ -626,22 +679,6 @@ export class FoundationRepository {
         if (error) notifySupabaseError(`Delete office_bearer error: ${error.message}`);
       } catch (err: any) {
         notifySupabaseError(`Delete office_bearer exception: ${err?.message}`);
-      }
-    }
-    window.dispatchEvent(new Event('repository_updated'));
-  }
-
-  static async reorderLeadership(reordered: OfficeBearer[]): Promise<void> {
-    const updated = reordered.map((l, idx) => ({ ...l, order: idx }));
-    localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(updated));
-
-    if (supabase) {
-      try {
-        const payload = updated.map((l, idx) => mapLeaderToDb(l, idx));
-        const { error } = await supabase.from('office_bearers').upsert(payload);
-        if (error) notifySupabaseError(`Reorder office_bearers error: ${error.message}`);
-      } catch (err: any) {
-        notifySupabaseError(`Reorder office_bearers exception: ${err?.message}`);
       }
     }
     window.dispatchEvent(new Event('repository_updated'));
@@ -824,9 +861,9 @@ export class FoundationRepository {
 
   // News & Events Data
   static getNewsEvents(): NewsEventItem[] {
-    const cached = localStorage.getItem(STORAGE_KEYS.NEWS_EVENTS);
+    const cached = localStorage.getItem('swf_news_events_v1');
     if (!cached) {
-      localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(INITIAL_NEWS_EVENTS));
+      localStorage.setItem('swf_news_events_v1', JSON.stringify(INITIAL_NEWS_EVENTS));
       return INITIAL_NEWS_EVENTS;
     }
     try {
@@ -840,60 +877,41 @@ export class FoundationRepository {
     const list = this.getNewsEvents();
     const index = list.findIndex(n => n.id === item.id);
     let updated: NewsEventItem[];
-
     if (index >= 0) {
       updated = [...list];
       updated[index] = item;
     } else {
       updated = [item, ...list];
     }
-
-    localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(updated));
+    localStorage.setItem('swf_news_events_v1', JSON.stringify(updated));
 
     if (supabase) {
       try {
         const payload = mapNewsEventToDb(item);
         const { error } = await supabase.from('news_events').upsert(payload);
-        if (error) notifySupabaseError(`Save news_events error: ${error.message}`);
+        if (error) notifySupabaseError(`Save news_event error: ${error.message}`);
       } catch (err: any) {
-        notifySupabaseError(`Save news_events exception: ${err?.message}`);
+        notifySupabaseError(`Save news_event exception: ${err?.message}`);
       }
     }
-
     window.dispatchEvent(new Event('repository_updated'));
     return item;
   }
 
   static async deleteNewsEvent(id: string): Promise<void> {
     const list = this.getNewsEvents().filter(n => n.id !== id);
-    localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(list));
+    localStorage.setItem('swf_news_events_v1', JSON.stringify(list));
 
     if (supabase) {
       try {
         const { error } = await supabase.from('news_events').delete().eq('id', id);
-        if (error) notifySupabaseError(`Delete news_events error: ${error.message}`);
+        if (error) notifySupabaseError(`Delete news_event error: ${error.message}`);
       } catch (err: any) {
-        notifySupabaseError(`Delete news_events exception: ${err?.message}`);
-      }
-    }
-
-    window.dispatchEvent(new Event('repository_updated'));
-  }
-
-  static async reorderNewsEvents(reordered: NewsEventItem[]): Promise<void> {
-    localStorage.setItem(STORAGE_KEYS.NEWS_EVENTS, JSON.stringify(reordered));
-    if (supabase) {
-      try {
-        const payload = reordered.map(mapNewsEventToDb);
-        const { error } = await supabase.from('news_events').upsert(payload);
-        if (error) notifySupabaseError(`Reorder news_events error: ${error.message}`);
-      } catch (err: any) {
-        notifySupabaseError(`Reorder news_events exception: ${err?.message}`);
+        notifySupabaseError(`Delete news_event exception: ${err?.message}`);
       }
     }
     window.dispatchEvent(new Event('repository_updated'));
   }
-
 
   // Payment Info & UPI Barcode Sync
   static getPaymentInfo(): PaymentInfo {
@@ -941,55 +959,8 @@ export class FoundationRepository {
     return updated;
   }
 
-  // Media File Helper: Uploads images & videos to Supabase Storage if bucket exists, or converts to Base64
+  // Image & Video Media File Helper: Uploads to Supabase Storage if bucket exists, or converts to Data URL
   static async uploadMedia(file: File, folder: string = 'general'): Promise<string> {
-    return this.uploadImage(file, folder);
-  }
-
-  // Generate video poster thumbnail from a video file using HTML5 canvas
-  static async generateVideoThumbnail(file: File): Promise<string> {
-    return new Promise((resolve) => {
-      try {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.muted = true;
-        video.playsInline = true;
-        const url = URL.createObjectURL(file);
-        video.src = url;
-        video.onloadeddata = () => {
-          video.currentTime = Math.min(1.5, (video.duration || 4) / 4);
-        };
-        video.onseeked = () => {
-          try {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 360;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-              URL.revokeObjectURL(url);
-              resolve(dataUrl);
-              return;
-            }
-          } catch {
-            // fallback
-          }
-          URL.revokeObjectURL(url);
-          resolve('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800');
-        };
-        video.onerror = () => {
-          URL.revokeObjectURL(url);
-          resolve('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800');
-        };
-      } catch {
-        resolve('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800');
-      }
-    });
-  }
-
-  // Image File Helper: Uploads to Supabase Storage if bucket exists, or converts to Base64
-  static async uploadImage(file: File, folder: string = 'general'): Promise<string> {
     if (supabase) {
       try {
         await this.ensureBucketExists();
@@ -997,14 +968,10 @@ export class FoundationRepository {
         const fileExt = file.name.split('.').pop() || 'png';
         const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
         
-        // Attempt upload to 'foundation_images' bucket with contentType
+        // Attempt upload to 'foundation_images' bucket
         const { data, error } = await supabase.storage
           .from('foundation_images')
-          .upload(fileName, file, { 
-            cacheControl: '3600', 
-            upsert: true,
-            contentType: file.type || undefined
-          });
+          .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
         if (!error && data) {
           const { data: publicUrlData } = supabase.storage
@@ -1030,6 +997,11 @@ export class FoundationRepository {
       reader.onerror = (e) => reject(e);
       reader.readAsDataURL(file);
     });
+  }
+
+  // Image File Helper alias for backwards compatibility
+  static async uploadImage(file: File, folder: string = 'general'): Promise<string> {
+    return this.uploadMedia(file, folder);
   }
 
   // Donors
@@ -1302,36 +1274,32 @@ CREATE TABLE IF NOT EXISTS public.office_bearers (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Create Media & Photo/Video Gallery Table
+-- Ensure columns exist for existing tables
+ALTER TABLE public.office_bearers ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
+ALTER TABLE public.gallery ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE public.gallery ADD COLUMN IF NOT EXISTS media_type TEXT DEFAULT 'photo';
+
+-- 5. Create Photo & Video Gallery Table
 CREATE TABLE IF NOT EXISTS public.gallery (
   id TEXT PRIMARY KEY,
   title_en TEXT NOT NULL,
-  title_hi TEXT,
   title_or TEXT,
   category TEXT NOT NULL,
   image_url TEXT NOT NULL,
+  video_url TEXT,
+  media_type TEXT DEFAULT 'photo',
   date TEXT,
   location TEXT,
-  media_type TEXT DEFAULT 'photo',
-  video_url TEXT,
-  duration TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Create Foundation Settings Table
-CREATE TABLE IF NOT EXISTS public.foundation_settings (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 7. Create News & Upcoming Events Table
+-- 6. Create News & Upcoming Events Table
 CREATE TABLE IF NOT EXISTS public.news_events (
   id TEXT PRIMARY KEY,
   title_en TEXT NOT NULL,
   title_hi TEXT,
   title_or TEXT,
-  date TEXT NOT NULL,
+  date TEXT,
   category TEXT NOT NULL DEFAULT 'news',
   location TEXT,
   summary_en TEXT,
@@ -1340,6 +1308,13 @@ CREATE TABLE IF NOT EXISTS public.news_events (
   image_url TEXT,
   is_upcoming BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Create Foundation Settings Table
+CREATE TABLE IF NOT EXISTS public.foundation_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Grant privileges to anon and authenticated roles
@@ -1352,8 +1327,8 @@ ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assistance_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.office_bearers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gallery ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.foundation_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.news_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.foundation_settings ENABLE ROW LEVEL SECURITY;
 
 -- Create Open RLS Policies for Anon & Authenticated users
 DROP POLICY IF EXISTS "Public access drives" ON public.drives;
@@ -1371,16 +1346,16 @@ CREATE POLICY "Public access office_bearers" ON public.office_bearers FOR ALL TO
 DROP POLICY IF EXISTS "Public access gallery" ON public.gallery;
 CREATE POLICY "Public access gallery" ON public.gallery FOR ALL TO public USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public access foundation_settings" ON public.foundation_settings;
-CREATE POLICY "Public access foundation_settings" ON public.foundation_settings FOR ALL TO public USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Public access news_events" ON public.news_events;
 CREATE POLICY "Public access news_events" ON public.news_events FOR ALL TO public USING (true) WITH CHECK (true);
 
--- 8. Storage Bucket Setup & Policies (Supports photos & video uploads)
+DROP POLICY IF EXISTS "Public access foundation_settings" ON public.foundation_settings;
+CREATE POLICY "Public access foundation_settings" ON public.foundation_settings FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- 8. Storage Bucket Setup & Policies (Allows Images & Videos up to 50MB)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('foundation_images', 'foundation_images', true, 104857600, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'video/mp4', 'video/webm', 'video/quicktime', 'video/ogg'])
-ON CONFLICT (id) DO UPDATE SET public = true, file_size_limit = 104857600;
+VALUES ('foundation_images', 'foundation_images', true, 52428800, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'video/mp4', 'video/webm', 'video/quicktime', 'video/ogg'])
+ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- Storage Policies for 'foundation_images' bucket
 DROP POLICY IF EXISTS "Public Storage Read" ON storage.objects;

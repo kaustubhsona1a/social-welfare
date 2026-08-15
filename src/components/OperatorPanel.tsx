@@ -22,20 +22,16 @@ import {
   LogOut,
   User,
   Key,
-  GripVertical,
-  ChevronUp,
-  ChevronDown,
+  ArrowUp,
+  ArrowDown,
   ArrowUpDown,
-  Move,
+  Video,
+  Film,
+  Play,
   Newspaper,
   Calendar,
-  MapPin,
-  Bell,
   Megaphone,
-  Tag,
-  Video,
-  Play,
-  Film,
+  Bell,
   Link as LinkIcon
 } from 'lucide-react';
 import { Logo } from './Logo';
@@ -60,15 +56,13 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'leadership' | 'drives' | 'news' | 'gallery' | 'upload' | 'requests'>('leadership');
+  const [activeTab, setActiveTab] = useState<'leadership' | 'drives' | 'gallery' | 'news_events' | 'upload' | 'requests'>('leadership');
   const [uploading, setUploading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // --- LEADER EDIT / ADD / REORDER STATE ---
+  // --- LEADER EDIT / ADD STATE ---
   const [editingLeaderId, setEditingLeaderId] = useState<string | null>(null);
   const [editLeaderData, setEditLeaderData] = useState<Partial<OfficeBearer>>({});
-  const [draggedLeaderIndex, setDraggedLeaderIndex] = useState<number | null>(null);
-  const [dragOverLeaderIndex, setDragOverLeaderIndex] = useState<number | null>(null);
   
   const [showAddLeader, setShowAddLeader] = useState(false);
   const [newLeaderNameEn, setNewLeaderNameEn] = useState('');
@@ -77,6 +71,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [newLeaderRoleOr, setNewLeaderRoleOr] = useState('');
   const [newLeaderCategory, setNewLeaderCategory] = useState<'executive' | 'advisory' | 'trustee'>('executive');
   const [newLeaderPhone, setNewLeaderPhone] = useState('');
+  const [newLeaderDisplayOrder, setNewLeaderDisplayOrder] = useState<number | undefined>(undefined);
   const [leaderImagePreview, setLeaderImagePreview] = useState<string | null>(null);
 
   // --- DRIVE EDIT / ADD STATE ---
@@ -90,48 +85,37 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const [newDriveCategory, setNewDriveCategory] = useState<'ration' | 'cloth' | 'medical' | 'flood'>('ration');
   const [driveImagePreview, setDriveImagePreview] = useState<string | null>(null);
 
-  // --- NEWS & UPCOMING EVENTS STATE ---
-  const [newsFilter, setNewsFilter] = useState<'all' | 'news' | 'event' | 'press' | 'upcoming'>('all');
-  const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
-  const [editNewsData, setEditNewsData] = useState<Partial<NewsEventItem>>({});
-
-  const [showAddNews, setShowAddNews] = useState(false);
-  const [newNewsTitleEn, setNewNewsTitleEn] = useState('');
-  const [newNewsTitleHi, setNewNewsTitleHi] = useState('');
-  const [newNewsTitleOr, setNewNewsTitleOr] = useState('');
-  const [newNewsCategory, setNewNewsCategory] = useState<'news' | 'event' | 'press'>('news');
-  const [newNewsDate, setNewNewsDate] = useState('');
-  const [newNewsLocation, setNewNewsLocation] = useState('');
-  const [newNewsSummaryEn, setNewNewsSummaryEn] = useState('');
-  const [newNewsSummaryHi, setNewNewsSummaryHi] = useState('');
-  const [newNewsSummaryOr, setNewNewsSummaryOr] = useState('');
-  const [newNewsIsUpcoming, setNewNewsIsUpcoming] = useState(false);
-  const [newsImagePreview, setNewsImagePreview] = useState<string | null>(null);
-
-  // --- GALLERY STATE (PHOTOS & VIDEOS) ---
-  const [galleryTabMode, setGalleryTabMode] = useState<'photo' | 'video'>('photo');
-  const [galleryFilter, setGalleryFilter] = useState<'all' | 'photo' | 'video'>('all');
+  // --- GALLERY UPLOAD STATE (PHOTOS & VIDEOS) ---
+  const [galleryUploadMode, setGalleryUploadMode] = useState<'photos' | 'video'>('photos');
   const [newGalleryTitle, setNewGalleryTitle] = useState('');
   const [newGalleryCategory, setNewGalleryCategory] = useState<GalleryItem['category']>('relief');
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState<File[]>([]);
   const [galleryFilePreviews, setGalleryFilePreviews] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
-  // Video Upload States
-  const [videoUploadMode, setVideoUploadMode] = useState<'file' | 'link'>('file');
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  // Video specific upload state
+  const [videoUploadFile, setVideoUploadFile] = useState<File | null>(null);
   const [videoFilePreview, setVideoFilePreview] = useState<string | null>(null);
-  const [videoUrlInput, setVideoUrlInput] = useState('');
-  const [videoDurationInput, setVideoDurationInput] = useState('');
-  const [videoTitleEn, setVideoTitleEn] = useState('');
-  const [videoTitleOr, setVideoTitleOr] = useState('');
-  const [videoTitleHi, setVideoTitleHi] = useState('');
+  const [videoDirectUrl, setVideoDirectUrl] = useState('');
+  const [videoTitle, setVideoTitle] = useState('');
   const [videoCategory, setVideoCategory] = useState<GalleryItem['category']>('relief');
-  const [videoLocation, setVideoLocation] = useState('Babujang, Cuttack');
-  const [videoDate, setVideoDate] = useState(new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
-  const [videoPosterFile, setVideoPosterFile] = useState<File | null>(null);
-  const [videoPosterPreview, setVideoPosterPreview] = useState<string | null>(null);
-  const [videoPreviewModalItem, setVideoPreviewModalItem] = useState<GalleryItem | null>(null);
+  const [videoCoverPreview, setVideoCoverPreview] = useState<string | null>(null);
+
+  // --- NEWS & EVENTS STATE ---
+  const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
+  const [editNewsData, setEditNewsData] = useState<Partial<NewsEventItem>>({});
+  const [showAddNews, setShowAddNews] = useState(false);
+  const [newNewsTitleEn, setNewNewsTitleEn] = useState('');
+  const [newNewsTitleHi, setNewNewsTitleHi] = useState('');
+  const [newNewsTitleOr, setNewNewsTitleOr] = useState('');
+  const [newNewsCategory, setNewNewsCategory] = useState<'news' | 'event' | 'press'>('news');
+  const [newNewsDate, setNewNewsDate] = useState('');
+  const [newNewsLocation, setNewNewsLocation] = useState('Babujang, Cuttack');
+  const [newNewsSummaryEn, setNewNewsSummaryEn] = useState('');
+  const [newNewsSummaryHi, setNewNewsSummaryHi] = useState('');
+  const [newNewsSummaryOr, setNewNewsSummaryOr] = useState('');
+  const [newNewsIsUpcoming, setNewNewsIsUpcoming] = useState(false);
+  const [newsImagePreview, setNewsImagePreview] = useState<string | null>(null);
 
   // --- BRANDING & BACKGROUND STATE ---
   const [desktopBgPreview, setDesktopBgPreview] = useState<string | null>(FoundationRepository.getDesktopHeroBg());
@@ -146,12 +130,13 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const desktopBgInputRef = useRef<HTMLInputElement>(null);
   const mobileBgInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const videoCoverInputRef = useRef<HTMLInputElement>(null);
+  const newsCoverInputRef = useRef<HTMLInputElement>(null);
+  const newsPhotoInputRef = useRef<HTMLInputElement>(null);
   const leaderPhotoInputRef = useRef<HTMLInputElement>(null);
   const drivePhotoInputRef = useRef<HTMLInputElement>(null);
   const upiQrInputRef = useRef<HTMLInputElement>(null);
-  const newsPhotoInputRef = useRef<HTMLInputElement>(null);
-  const videoFileInputRef = useRef<HTMLInputElement>(null);
-  const videoPosterInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -182,8 +167,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   const leadership = FoundationRepository.getLeadership();
   const galleryItems = FoundationRepository.getGallery();
   const drives = FoundationRepository.getDrives();
+  const newsList = FoundationRepository.getNewsEvents();
   const requests = FoundationRepository.getAssistanceRequests();
-  const newsEvents = FoundationRepository.getNewsEvents();
 
   const notify = (msg: string) => {
     setToastMessage(msg);
@@ -376,6 +361,13 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     }
   };
 
+  const handleMoveLeader = async (id: string, direction: 'up' | 'down') => {
+    setUploading(true);
+    await FoundationRepository.moveLeader(id, direction);
+    setUploading(false);
+    notify('Leadership display order updated');
+  };
+
   const handleStartEditLeader = (leader: OfficeBearer) => {
     setEditingLeaderId(leader.id);
     setEditLeaderData(leader);
@@ -392,8 +384,9 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
       ...(editLeaderData as OfficeBearer),
       nameEn,
       roleEn,
-      nameOr: getOdiaName(nameEn, editLeaderData.nameOr),
-      roleOr: getOdiaRole(roleEn, editLeaderData.roleOr),
+      nameOr: editLeaderData.nameOr || nameEn,
+      roleOr: editLeaderData.roleOr || roleEn,
+      displayOrder: editLeaderData.displayOrder !== undefined ? Number(editLeaderData.displayOrder) : undefined
     };
 
     await FoundationRepository.saveLeadershipMember(updatedLeader);
@@ -420,14 +413,15 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     const newMember: OfficeBearer = {
       id: 'leader-' + Date.now(),
       nameEn: newLeaderNameEn,
-      nameOr: newLeaderNameOr && hasOdiaScript(newLeaderNameOr) ? newLeaderNameOr : transliterateNameToOdia(newLeaderNameEn),
+      nameOr: newLeaderNameOr.trim() || transliterateNameToOdia(newLeaderNameEn),
       roleEn: newLeaderRoleEn,
-      roleOr: newLeaderRoleOr && hasOdiaScript(newLeaderRoleOr) ? newLeaderRoleOr : translateDesignationToOdia(newLeaderRoleEn),
+      roleOr: newLeaderRoleOr.trim() || translateDesignationToOdia(newLeaderRoleEn),
       category: newLeaderCategory,
       imageUrl: defaultImg,
       phone: newLeaderPhone || '9777085775',
       bioEn: 'Dedicated community leader serving Babujang, Cuttack.',
-      bioOr: 'ବାବୁଜଙ୍ଗ ଓ କଟକ ଅଞ୍ଚଳରେ ନିଷ୍ଠାପର ଭାବେ ଗ୍ରାମୀଣ ସେବା ପ୍ରଦାନ।'
+      bioOr: 'ବାବୁଜଙ୍ଗ ଓ କଟକ ଅଞ୍ଚଳରେ ନିଷ୍ଠାପର ଭାବେ ଗ୍ରାମୀଣ ସେବା ପ୍ରଦାନ।',
+      displayOrder: newLeaderDisplayOrder !== undefined ? Number(newLeaderDisplayOrder) : undefined
     };
 
     setUploading(true);
@@ -439,50 +433,11 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     setNewLeaderRoleEn('');
     setNewLeaderRoleOr('');
     setNewLeaderPhone('');
+    setNewLeaderDisplayOrder(undefined);
     setLeaderImagePreview(null);
     setShowAddLeader(false);
 
     notify('Added new leader!');
-  };
-
-  // ----------------------------------------------------
-  // LEADER REORDERING / DRAG & DROP
-  // ----------------------------------------------------
-  const handleMoveLeader = async (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= leadership.length || fromIndex === toIndex) return;
-    const updated = [...leadership];
-    const [movedItem] = updated.splice(fromIndex, 1);
-    updated.splice(toIndex, 0, movedItem);
-    await FoundationRepository.reorderLeadership(updated);
-    notify(`Order updated: "${movedItem.nameEn}" is now at position #${toIndex + 1}`);
-  };
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedLeaderIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', index.toString());
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragOverLeaderIndex !== index) {
-      setDragOverLeaderIndex(index);
-    }
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    const sourceIndex = draggedLeaderIndex !== null ? draggedLeaderIndex : parseInt(e.dataTransfer.getData('text/plain'), 10);
-    setDraggedLeaderIndex(null);
-    setDragOverLeaderIndex(null);
-    if (isNaN(sourceIndex) || sourceIndex === targetIndex) return;
-    await handleMoveLeader(sourceIndex, targetIndex);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedLeaderIndex(null);
-    setDragOverLeaderIndex(null);
   };
 
   // ----------------------------------------------------
@@ -561,17 +516,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   };
 
   // ----------------------------------------------------
-  // GALLERY PHOTO & VIDEO UPLOAD HANDLERS
+  // GALLERY MULTIPLE PHOTO UPLOAD
   // ----------------------------------------------------
-  const getYouTubeThumbnail = (url: string): string | null => {
-    if (!url) return null;
-    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-    if (ytMatch && ytMatch[1]) {
-      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
-    }
-    return null;
-  };
-
   const handleGalleryFilesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files: File[] = Array.from(e.target.files);
@@ -612,7 +558,6 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           titleEn: itemTitle,
           titleOr: itemTitle,
           category: newGalleryCategory,
-          mediaType: 'photo',
           imageUrl,
           date: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
           location: 'Babujang, Cuttack'
@@ -633,122 +578,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     }
   };
 
-  // Video Handlers
-  const handleVideoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 150 * 1024 * 1024) {
-      alert('Video file is larger than 150MB. Please choose a smaller video or compress it.');
-      return;
-    }
-
-    setVideoFile(file);
-    const preview = URL.createObjectURL(file);
-    setVideoFilePreview(preview);
-
-    // Auto generate video thumbnail from video frame
-    try {
-      setUploadProgress('Generating video thumbnail...');
-      const thumb = await FoundationRepository.generateVideoThumbnail(file);
-      setVideoPosterPreview(thumb);
-    } catch {
-      // ignore
-    } finally {
-      setUploadProgress(null);
-    }
-  };
-
-  const handleVideoPosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setVideoPosterFile(file);
-      setVideoPosterPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleVideoUploadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (videoUploadMode === 'file' && !videoFile) {
-      alert('Please select a video file (MP4, WebM, or MOV).');
-      return;
-    }
-
-    if (videoUploadMode === 'link' && !videoUrlInput.trim()) {
-      alert('Please enter a valid YouTube, Vimeo or MP4 video URL.');
-      return;
-    }
-
-    if (!videoTitleEn.trim()) {
-      alert('Please provide a title for the video.');
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress('Processing video upload...');
-
-    try {
-      let finalVideoUrl = '';
-
-      if (videoUploadMode === 'file' && videoFile) {
-        setUploadProgress('Uploading video file to storage...');
-        finalVideoUrl = await FoundationRepository.uploadMedia(videoFile, 'videos');
-      } else {
-        finalVideoUrl = videoUrlInput.trim();
-      }
-
-      let finalPosterUrl = videoPosterPreview || '';
-
-      if (videoPosterFile) {
-        setUploadProgress('Uploading cover poster...');
-        finalPosterUrl = await FoundationRepository.uploadImage(videoPosterFile, 'gallery_posters');
-      } else if (!finalPosterUrl) {
-        const ytThumb = getYouTubeThumbnail(finalVideoUrl);
-        if (ytThumb) {
-          finalPosterUrl = ytThumb;
-        } else {
-          finalPosterUrl = 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800';
-        }
-      }
-
-      const newVideoItem: GalleryItem = {
-        id: `vid-${Date.now()}`,
-        titleEn: videoTitleEn.trim(),
-        titleHi: videoTitleHi.trim() || undefined,
-        titleOr: videoTitleOr.trim() || videoTitleEn.trim(),
-        category: videoCategory,
-        mediaType: 'video',
-        videoUrl: finalVideoUrl,
-        imageUrl: finalPosterUrl,
-        date: videoDate.trim() || new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
-        location: videoLocation.trim() || 'Babujang, Cuttack',
-        duration: videoDurationInput.trim() || undefined
-      };
-
-      await FoundationRepository.saveGalleryItem(newVideoItem);
-      notify('Video posted successfully to Gallery!');
-
-      // Reset form
-      setVideoFile(null);
-      setVideoFilePreview(null);
-      setVideoPosterFile(null);
-      setVideoPosterPreview(null);
-      setVideoUrlInput('');
-      setVideoDurationInput('');
-      setVideoTitleEn('');
-      setVideoTitleHi('');
-      setVideoTitleOr('');
-    } catch (err: any) {
-      alert(`Failed to save video: ${err?.message || 'Error'}`);
-    } finally {
-      setUploading(false);
-      setUploadProgress(null);
-    }
-  };
-
   const handleDeleteGallery = async (id: string) => {
-    if (confirm('Delete this item from gallery?')) {
+    if (confirm('Delete this gallery item?')) {
       setUploading(true);
       await FoundationRepository.deleteGalleryItem(id);
       setUploading(false);
@@ -758,115 +589,145 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
   };
 
   // ----------------------------------------------------
+  // GALLERY VIDEO UPLOAD / EMBED HANDLER
+  // ----------------------------------------------------
+  const handleVideoUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!videoUploadFile && !videoDirectUrl.trim()) {
+      alert('Please choose a video file to upload or enter a video URL.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      let finalVideoUrl = videoDirectUrl.trim();
+      if (videoUploadFile) {
+        setUploadProgress('Uploading video file (this may take a few moments)...');
+        finalVideoUrl = await FoundationRepository.uploadMedia(videoUploadFile, 'gallery_videos');
+      }
+
+      let finalThumbnail = videoCoverPreview || 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800';
+
+      const itemTitle = videoTitle.trim() || 'Foundation Field Activity Video';
+
+      const newItem: GalleryItem = {
+        id: `gal-vid-${Date.now()}`,
+        titleEn: itemTitle,
+        titleOr: itemTitle,
+        category: videoCategory,
+        imageUrl: finalThumbnail,
+        videoUrl: finalVideoUrl,
+        mediaType: 'video',
+        date: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
+        location: 'Babujang, Cuttack'
+      };
+
+      await FoundationRepository.saveGalleryItem(newItem);
+      notify('Video added to Gallery successfully!');
+      
+      setVideoUploadFile(null);
+      setVideoFilePreview(null);
+      setVideoDirectUrl('');
+      setVideoTitle('');
+      setVideoCoverPreview(null);
+    } catch (err: any) {
+      alert(`Video upload failed: ${err?.message || 'Error uploading video'}`);
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+    }
+  };
+
+  // ----------------------------------------------------
   // NEWS & UPCOMING EVENTS HANDLERS
   // ----------------------------------------------------
   const handleStartEditNews = (item: NewsEventItem) => {
     setEditingNewsId(item.id);
-    setEditNewsData({ ...item });
-  };
-
-  const handleCancelNewsEdit = () => {
-    setEditingNewsId(null);
-    setEditNewsData({});
+    setEditNewsData(item);
   };
 
   const handleSaveNewsEdit = async () => {
-    if (!editingNewsId || !editNewsData) return;
-    if (!editNewsData.titleEn?.trim()) {
-      alert('English title is required.');
-      return;
-    }
-
+    if (!editingNewsId) return;
     setUploading(true);
-    const existing = newsEvents.find(n => n.id === editingNewsId);
-    const updated: NewsEventItem = {
-      id: editingNewsId,
-      titleEn: editNewsData.titleEn.trim(),
-      titleHi: editNewsData.titleHi?.trim() || editNewsData.titleEn.trim(),
-      titleOr: editNewsData.titleOr?.trim() || editNewsData.titleEn.trim(),
-      date: editNewsData.date?.trim() || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+
+    const titleEn = editNewsData.titleEn || '';
+    const updatedNews: NewsEventItem = {
+      ...(editNewsData as NewsEventItem),
+      titleEn,
+      titleHi: editNewsData.titleHi || titleEn,
+      titleOr: editNewsData.titleOr || transliterateNameToOdia(titleEn),
+      location: editNewsData.location || 'Babujang, Cuttack',
+      date: editNewsData.date || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       category: editNewsData.category || 'news',
-      location: editNewsData.location?.trim() || 'Babujang, Cuttack',
-      summaryEn: editNewsData.summaryEn?.trim() || '',
-      summaryHi: editNewsData.summaryHi?.trim() || editNewsData.summaryEn?.trim() || '',
-      summaryOr: editNewsData.summaryOr?.trim() || editNewsData.summaryEn?.trim() || '',
-      imageUrl: editNewsData.imageUrl || existing?.imageUrl || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800',
-      isUpcoming: Boolean(editNewsData.isUpcoming)
+      summaryEn: editNewsData.summaryEn || '',
+      summaryHi: editNewsData.summaryHi || editNewsData.summaryEn || '',
+      summaryOr: editNewsData.summaryOr || editNewsData.summaryEn || '',
+      imageUrl: editNewsData.imageUrl || 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=800',
+      isUpcoming: !!editNewsData.isUpcoming
     };
 
-    await FoundationRepository.saveNewsEvent(updated);
+    await FoundationRepository.saveNewsEvent(updatedNews);
     setUploading(false);
     setEditingNewsId(null);
-    setEditNewsData({});
-    notify('News & Event item updated successfully!');
+    notify('News & Event item saved successfully!');
   };
 
-  const handleToggleUpcomingNews = async (item: NewsEventItem) => {
-    const updated: NewsEventItem = {
-      ...item,
-      isUpcoming: !item.isUpcoming
-    };
-    setUploading(true);
-    await FoundationRepository.saveNewsEvent(updated);
-    setUploading(false);
-    notify(updated.isUpcoming ? 'Marked as Upcoming Event!' : 'Removed Upcoming badge.');
-  };
-
-  const handleDeleteNews = async (id: string, titleEn: string) => {
-    if (confirm(`Are you sure you want to delete "${titleEn}"?`)) {
+  const handleDeleteNews = async (id: string, title: string) => {
+    if (confirm(`Delete "${title}"?`)) {
       setUploading(true);
       await FoundationRepository.deleteNewsEvent(id);
       setUploading(false);
-      notify('News item deleted.');
+      notify(`Deleted "${title}"`);
     }
   };
 
-  const handleNewsPhotoUpload = async (item: NewsEventItem, file: File) => {
+  const handleNewsPhotoUpload = async (newsItem: NewsEventItem, file: File) => {
+    setUploading(true);
     try {
-      setUploading(true);
-      const imageUrl = await FoundationRepository.uploadImage(file, 'news');
-      const updated: NewsEventItem = { ...item, imageUrl };
+      const url = await FoundationRepository.uploadImage(file, 'news');
+      const updated = { ...newsItem, imageUrl: url };
       await FoundationRepository.saveNewsEvent(updated);
-      setUploading(false);
-      notify('News cover photo updated successfully!');
+      notify(`Updated cover photo for "${newsItem.titleEn}"`);
     } catch (err: any) {
+      alert(`Photo upload failed: ${err?.message || 'Error'}`);
+    } finally {
       setUploading(false);
-      alert(`Photo upload failed: ${err?.message || 'Error uploading image'}`);
     }
   };
 
-  const handleAddNewsSubmit = async (e: React.FormEvent) => {
+  const handleAddNews = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNewsTitleEn.trim()) {
-      alert('Please provide a title in English.');
+      alert('Please enter an event or news title.');
       return;
     }
 
+    setUploading(true);
+    const defaultCover = newsImagePreview || 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&q=80&w=800';
+
     const newItem: NewsEventItem = {
-      id: `news-${Date.now()}`,
+      id: 'news-' + Date.now(),
       titleEn: newNewsTitleEn.trim(),
       titleHi: newNewsTitleHi.trim() || newNewsTitleEn.trim(),
-      titleOr: newNewsTitleOr.trim() || newNewsTitleEn.trim(),
-      date: newNewsDate.trim() || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+      titleOr: newNewsTitleOr.trim() || transliterateNameToOdia(newNewsTitleEn.trim()),
+      date: newNewsDate.trim() || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       category: newNewsCategory,
       location: newNewsLocation.trim() || 'Babujang, Cuttack',
-      summaryEn: newNewsSummaryEn.trim(),
-      summaryHi: newNewsSummaryHi.trim() || newNewsSummaryEn.trim(),
-      summaryOr: newNewsSummaryOr.trim() || newNewsSummaryEn.trim(),
-      imageUrl: newsImagePreview || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800',
+      summaryEn: newNewsSummaryEn.trim() || 'Community development and welfare initiative organized by Social Welfare Foundation.',
+      summaryHi: newNewsSummaryHi.trim() || newNewsSummaryEn.trim() || 'सोशल वेलफेयर फाउंडेशन द्वारा आयोजित समाज कल्याण कार्यक्रम।',
+      summaryOr: newNewsSummaryOr.trim() || newNewsSummaryEn.trim() || 'ସୋସିଆଲ ୱେଲଫେୟାର ଫାଉଣ୍ଡେସନ ଦ୍ୱାରା ଆୟୋଜିତ କଲ୍ୟାଣମୂଳକ କାର୍ଯ୍ୟକ୍ରମ।',
+      imageUrl: defaultCover,
       isUpcoming: newNewsIsUpcoming
     };
 
-    setUploading(true);
     await FoundationRepository.saveNewsEvent(newItem);
     setUploading(false);
 
-    // Reset Form
     setNewNewsTitleEn('');
     setNewNewsTitleHi('');
     setNewNewsTitleOr('');
     setNewNewsDate('');
-    setNewNewsLocation('');
+    setNewNewsLocation('Babujang, Cuttack');
     setNewNewsSummaryEn('');
     setNewNewsSummaryHi('');
     setNewNewsSummaryOr('');
@@ -874,7 +735,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
     setNewsImagePreview(null);
     setShowAddNews(false);
 
-    notify('New News/Event published successfully!');
+    notify('News & Event item published successfully!');
   };
 
   return (
@@ -967,20 +828,6 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('news')}
-            className={`px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all ${
-              activeTab === 'news'
-                ? 'bg-white text-emerald-800 border-t-2 border-emerald-600 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <span className="flex items-center gap-1.5">
-              <Newspaper className="w-3.5 h-3.5" />
-              <span>News & Events ({newsEvents.length})</span>
-            </span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('gallery')}
             className={`px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all ${
               activeTab === 'gallery'
@@ -990,7 +837,21 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           >
             <span className="flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5" />
-              <span>Gallery</span>
+              <span>Gallery ({galleryItems.length})</span>
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('news_events')}
+            className={`px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all ${
+              activeTab === 'news_events'
+                ? 'bg-white text-emerald-800 border-t-2 border-emerald-600 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />
+              <span>News & Events ({newsList.length})</span>
             </span>
           </button>
 
@@ -1031,35 +892,18 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           {/* ======================================================= */}
           {activeTab === 'leadership' && (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                    <span>Foundation Office Bearers ({leadership.length})</span>
-                    <span className="text-[10px] font-normal text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      Drag to Reorder
-                    </span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Leaders at the top appear first on the website. Drag cards or use ↑ / ↓ arrows to rearrange priority.
-                  </p>
-                </div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Foundation Office Bearers ({leadership.length})
+                </h4>
 
                 <button
                   onClick={() => setShowAddLeader(!showAddLeader)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-medium shadow-2xs shrink-0 self-start sm:self-auto"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-medium shadow-2xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add New Leader</span>
                 </button>
-              </div>
-
-              {/* Order Guidance Tip */}
-              <div className="p-3 bg-sky-50/80 rounded-xl border border-sky-200 flex items-center gap-3 text-xs text-sky-950">
-                <ArrowUpDown className="w-4 h-4 text-sky-700 shrink-0" />
-                <div className="text-[11px] leading-relaxed">
-                  <span className="font-semibold text-sky-900">Live Website Display Order: </span>
-                  Grab the <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold">⋮⋮</span> handle on any card to drag up or down, or click the <span className="font-bold">↑</span> and <span className="font-bold">↓</span> buttons. Position <strong className="text-emerald-700">#1</strong> is shown first to website visitors.
-                </div>
               </div>
 
               {/* Add Leader Form (Collapsible) */}
@@ -1113,17 +957,29 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                         className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Category</label>
-                      <select
-                        value={newLeaderCategory}
-                        onChange={e => setNewLeaderCategory(e.target.value as any)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                      >
-                        <option value="executive">Executive Board</option>
-                        <option value="advisory">Advisory Board</option>
-                        <option value="trustee">Trustee Council</option>
-                      </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-600 mb-1">Category</label>
+                        <select
+                          value={newLeaderCategory}
+                          onChange={e => setNewLeaderCategory(e.target.value as any)}
+                          className="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        >
+                          <option value="executive">Executive</option>
+                          <option value="advisory">Advisory</option>
+                          <option value="trustee">Trustee</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-600 mb-1">Display Order</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 1"
+                          value={newLeaderDisplayOrder ?? ''}
+                          onChange={e => setNewLeaderDisplayOrder(e.target.value ? Number(e.target.value) : undefined)}
+                          className="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1165,16 +1021,14 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                 </form>
               )}
 
-              {/* Drag and Drop Cards List */}
-              <div className="space-y-2.5">
+              {/* Clean Cards List */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {leadership.map((member, index) => {
                   const isEditing = editingLeaderId === member.id;
-                  const isBeingDragged = draggedLeaderIndex === index;
-                  const isDragTarget = dragOverLeaderIndex === index && draggedLeaderIndex !== index;
 
                   if (isEditing) {
                     return (
-                      <div key={member.id} className="bg-white p-4 rounded-xl border border-emerald-400 shadow-md space-y-3">
+                      <div key={member.id} className="bg-white p-4 rounded-xl border border-emerald-400 shadow-md space-y-3 sm:col-span-2">
                         <div className="flex items-center justify-between border-b pb-2">
                           <span className="text-xs font-bold text-slate-800">Edit Leader: {member.nameEn}</span>
                           <button onClick={() => setEditingLeaderId(null)} className="text-slate-400 hover:text-slate-600">
@@ -1190,11 +1044,11 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                               value={editLeaderData.nameEn || ''}
                               onChange={e => {
                                 const newName = e.target.value;
-                                setEditLeaderData({ 
-                                  ...editLeaderData, 
-                                  nameEn: newName, 
-                                  nameOr: transliterateNameToOdia(newName)
-                                });
+                                setEditLeaderData(prev => ({ 
+                                  ...prev, 
+                                  nameEn: newName,
+                                  nameOr: prev.nameOr ? prev.nameOr : transliterateNameToOdia(newName)
+                                }));
                               }}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
@@ -1206,29 +1060,29 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                               value={editLeaderData.roleEn || ''}
                               onChange={e => {
                                 const newRole = e.target.value;
-                                setEditLeaderData({ 
-                                  ...editLeaderData, 
-                                  roleEn: newRole, 
-                                  roleOr: translateDesignationToOdia(newRole)
-                                });
+                                setEditLeaderData(prev => ({ 
+                                  ...prev, 
+                                  roleEn: newRole,
+                                  roleOr: prev.roleOr ? prev.roleOr : translateDesignationToOdia(newRole)
+                                }));
                               }}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600">Odia Name (Auto-converted)</label>
+                            <label className="block text-[11px] font-medium text-slate-600">Odia Name</label>
                             <input
                               type="text"
-                              value={editLeaderData.nameOr || transliterateNameToOdia(editLeaderData.nameEn)}
+                              value={editLeaderData.nameOr || ''}
                               onChange={e => setEditLeaderData({ ...editLeaderData, nameOr: e.target.value })}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border font-serif"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-600">Odia Role (Auto-converted)</label>
+                            <label className="block text-[11px] font-medium text-slate-600">Odia Role</label>
                             <input
                               type="text"
-                              value={editLeaderData.roleOr || translateDesignationToOdia(editLeaderData.roleEn)}
+                              value={editLeaderData.roleOr || ''}
                               onChange={e => setEditLeaderData({ ...editLeaderData, roleOr: e.target.value })}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border font-serif"
                             />
@@ -1239,6 +1093,16 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                               type="text"
                               value={editLeaderData.phone || ''}
                               onChange={e => setEditLeaderData({ ...editLeaderData, phone: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600">Display Order (1 = Top)</label>
+                            <input
+                              type="number"
+                              placeholder="e.g. 1"
+                              value={editLeaderData.displayOrder !== undefined ? editLeaderData.displayOrder : ''}
+                              onChange={e => setEditLeaderData({ ...editLeaderData, displayOrder: e.target.value ? Number(e.target.value) : undefined })}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
                           </div>
@@ -1265,56 +1129,22 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                   }
 
                   return (
-                    <div 
-                      key={member.id} 
-                      draggable={!isEditing && !uploading}
-                      onDragStart={(e) => handleDragStart(e, index)}
-                      onDragOver={(e) => handleDragOver(e, index)}
-                      onDragLeave={() => {
-                        if (dragOverLeaderIndex === index) {
-                          setDragOverLeaderIndex(null);
-                        }
-                      }}
-                      onDrop={(e) => handleDrop(e, index)}
-                      onDragEnd={handleDragEnd}
-                      className={`bg-white p-3 sm:p-3.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 sm:gap-4 ${
-                        isBeingDragged
-                          ? 'opacity-40 border-dashed border-2 border-emerald-500 bg-emerald-50 scale-[0.99]'
-                          : isDragTarget
-                          ? 'border-2 border-emerald-500 ring-2 ring-emerald-300/60 bg-emerald-50/70 scale-[1.01] shadow-md'
-                          : 'border-slate-200 shadow-2xs hover:border-slate-300 hover:shadow-xs'
-                      }`}
-                    >
-                      {/* Left: Drag Handle & Rank Badge & Photo */}
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                        {/* Drag Handle */}
-                        <div 
-                          className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 text-slate-400 hover:text-emerald-700 hover:bg-slate-100 rounded-md transition-colors shrink-0"
-                          title="Drag to reorder"
-                        >
-                          <GripVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <div key={member.id} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Order Number Badge */}
+                        <div className="flex flex-col items-center justify-center shrink-0">
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded font-mono" title={`Display Order: ${member.displayOrder ?? (index + 1)}`}>
+                            #{member.displayOrder ?? (index + 1)}
+                          </span>
                         </div>
 
-                        {/* Order Badge */}
-                        <div className="shrink-0">
-                          {index === 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] sm:text-xs font-bold tracking-tight">
-                              #1 • Visible First
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] sm:text-xs font-bold font-mono">
-                              #{index + 1}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Leader Avatar with Hover Camera Upload */}
+                        {/* Direct Photo Upload Click */}
                         <div className="relative group shrink-0">
-                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
+                          <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
                             <img src={member.imageUrl} alt={member.nameEn} className="w-full h-full object-cover" />
                           </div>
                           <label className="absolute inset-0 bg-slate-900/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                            <Camera className="w-3.5 h-3.5 text-white" />
+                            <Camera className="w-4 h-4 text-white" />
                             <input
                               type="file"
                               accept="image/*"
@@ -1327,58 +1157,33 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                           </label>
                         </div>
 
-                        {/* Leader Info */}
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h5 className="font-semibold text-slate-900 text-xs sm:text-sm truncate">{member.nameEn}</h5>
-                            <span className="text-[10px] text-slate-500 font-serif hidden md:inline">({member.nameOr})</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <p className="text-[11px] text-emerald-700 font-medium truncate">{member.roleEn}</p>
-                            <span className="text-slate-300 text-[10px]">•</span>
-                            <span className="text-[10px] text-slate-400 capitalize truncate">{member.category}</span>
-                          </div>
-                          {member.phone && (
-                            <p className="text-[10px] text-slate-400 font-mono hidden sm:block">{member.phone}</p>
-                          )}
+                          <h5 className="font-semibold text-slate-900 text-xs truncate">{member.nameEn}</h5>
+                          <p className="text-[11px] text-emerald-700 font-medium truncate">{member.roleEn}</p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">{member.phone}</p>
                         </div>
                       </div>
 
-                      {/* Right: Quick Reorder Buttons (Up/Down) & Edit / Delete */}
-                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                        {/* Move Up */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Move Up / Down Buttons */}
                         <button
                           type="button"
-                          onClick={() => handleMoveLeader(index, index - 1)}
+                          onClick={() => handleMoveLeader(member.id, 'up')}
                           disabled={index === 0}
-                          className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
-                            index === 0
-                              ? 'text-slate-300 border-slate-100 cursor-not-allowed bg-slate-50'
-                              : 'text-slate-700 hover:text-emerald-800 hover:bg-emerald-50 hover:border-emerald-200 border-slate-200'
-                          }`}
-                          title={index === 0 ? 'Already at top' : 'Move Up (Higher Priority)'}
+                          className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg"
+                          title="Move Leader Up"
                         >
-                          <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <ArrowUp className="w-3.5 h-3.5" />
                         </button>
-
-                        {/* Move Down */}
                         <button
                           type="button"
-                          onClick={() => handleMoveLeader(index, index + 1)}
+                          onClick={() => handleMoveLeader(member.id, 'down')}
                           disabled={index === leadership.length - 1}
-                          className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
-                            index === leadership.length - 1
-                              ? 'text-slate-300 border-slate-100 cursor-not-allowed bg-slate-50'
-                              : 'text-slate-700 hover:text-emerald-800 hover:bg-emerald-50 hover:border-emerald-200 border-slate-200'
-                          }`}
-                          title={index === leadership.length - 1 ? 'Already at bottom' : 'Move Down (Lower Priority)'}
+                          className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg"
+                          title="Move Leader Down"
                         >
-                          <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <ArrowDown className="w-3.5 h-3.5" />
                         </button>
-
-                        <div className="w-[1px] h-4 bg-slate-200 mx-0.5 hidden sm:block" />
-
-                        {/* Edit Leader */}
                         <button
                           onClick={() => handleStartEditLeader(member)}
                           className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
@@ -1386,8 +1191,6 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
-
-                        {/* Delete Leader */}
                         <button
                           onClick={() => handleDeleteLeader(member.id, member.nameEn)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
@@ -1684,721 +1487,54 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
           )}
 
           {/* ======================================================= */}
-          {/* TAB 3: NEWS & UPCOMING EVENTS                           */}
-          {/* ======================================================= */}
-          {activeTab === 'news' && (
-            <div className="space-y-4">
-              {/* Header Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Newspaper className="w-4 h-4 text-sky-600" />
-                    <h4 className="font-bold text-slate-800 text-sm">News, Events & Press Releases</h4>
-                    <span className="bg-sky-100 text-sky-800 text-xs px-2 py-0.5 rounded-full font-medium">
-                      {newsEvents.length} Items
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Publish updates, relief announcements, press releases, and upcoming community drives.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setShowAddNews(!showAddNews);
-                    setEditingNewsId(null);
-                  }}
-                  className="px-3.5 py-1.5 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shrink-0 shadow-2xs"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>{showAddNews ? 'Close Add Form' : 'Post News / Event'}</span>
-                </button>
-              </div>
-
-              {/* Filter Tabs */}
-              <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200">
-                {(['all', 'news', 'event', 'press', 'upcoming'] as const).map(tab => {
-                  const count = tab === 'all' 
-                    ? newsEvents.length 
-                    : tab === 'upcoming' 
-                    ? newsEvents.filter(n => n.isUpcoming).length 
-                    : newsEvents.filter(n => n.category === tab).length;
-
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => setNewsFilter(tab)}
-                      className={`px-3 py-1 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
-                        newsFilter === tab
-                          ? 'bg-white text-sky-800 font-semibold shadow-2xs border border-slate-200'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                      }`}
-                    >
-                      <span className="capitalize">
-                        {tab === 'all' ? 'All Updates' : tab === 'press' ? 'Press Releases' : tab === 'upcoming' ? 'Upcoming Only' : tab}
-                      </span>
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                        newsFilter === tab ? 'bg-sky-100 text-sky-800' : 'bg-slate-200 text-slate-600'
-                      }`}>
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* ADD NEWS / EVENT FORM */}
-              {showAddNews && (
-                <form onSubmit={handleAddNewsSubmit} className="p-4 sm:p-5 bg-sky-50/50 rounded-xl border border-sky-200 space-y-4 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between border-b border-sky-200 pb-2">
-                    <span className="text-xs font-bold text-sky-900 flex items-center gap-1.5">
-                      <Plus className="w-4 h-4 text-sky-700" />
-                      Create New Article or Upcoming Event
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddNews(false)}
-                      className="text-xs text-slate-500 hover:text-slate-800"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Category Selection */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Category *</label>
-                      <select
-                        value={newNewsCategory}
-                        onChange={e => setNewNewsCategory(e.target.value as any)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                      >
-                        <option value="news">Community News / Announcement</option>
-                        <option value="event">Upcoming Event / Camp</option>
-                        <option value="press">Press Release / Media Statement</option>
-                      </select>
-                    </div>
-
-                    {/* Upcoming Flag */}
-                    <div className="flex items-center pt-5">
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={newNewsIsUpcoming}
-                          onChange={e => setNewNewsIsUpcoming(e.target.checked)}
-                          className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500"
-                        />
-                        <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                          <Bell className="w-3.5 h-3.5 text-red-500" />
-                          Mark as Highlighted Upcoming Event
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* English Title */}
-                    <div className="sm:col-span-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-[11px] font-medium text-slate-700">Headline / Title (English) *</label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (newNewsTitleEn.trim()) {
-                              if (!newNewsTitleOr) setNewNewsTitleOr(transliterateNameToOdia(newNewsTitleEn));
-                              if (!newNewsTitleHi) setNewNewsTitleHi(newNewsTitleEn);
-                            }
-                          }}
-                          className="text-[10px] text-sky-700 hover:underline flex items-center gap-1"
-                        >
-                          <Sparkles className="w-3 h-3 text-sky-600" />
-                          Auto-fill Odia & Hindi
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Free Eye Checkup & Spectacle Camp in Cuttack"
-                        value={newNewsTitleEn}
-                        onChange={e => setNewNewsTitleEn(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium"
-                      />
-                    </div>
-
-                    {/* Odia Title */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (Odia / ଓଡ଼ିଆ)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. କଟକରେ ମାଗଣା ଚକ୍ଷୁ ଚିକିତ୍ସା ଶିବିର"
-                        value={newNewsTitleOr}
-                        onChange={e => setNewNewsTitleOr(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-odia"
-                      />
-                    </div>
-
-                    {/* Hindi Title */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (Hindi / हिन्दी)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. कटक में निःशुल्क नेत्र जांच एवं चश्मा वितरण शिविर"
-                        value={newNewsTitleHi}
-                        onChange={e => setNewNewsTitleHi(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                      />
-                    </div>
-
-                    {/* Date */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-[11px] font-medium text-slate-700">Date Display *</label>
-                        <div className="flex gap-1 text-[10px]">
-                          <button
-                            type="button"
-                            onClick={() => setNewNewsDate(new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }))}
-                            className="text-sky-700 hover:underline"
-                          >
-                            Today
-                          </button>
-                          <span>•</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const d = new Date();
-                              d.setDate(d.getDate() + 7);
-                              setNewNewsDate(d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }));
-                            }}
-                            className="text-sky-700 hover:underline"
-                          >
-                            Next Week
-                          </button>
-                        </div>
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. 15 August 2026 or 24-26 Sept"
-                        value={newNewsDate}
-                        onChange={e => setNewNewsDate(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                      />
-                    </div>
-
-                    {/* Location */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Location / Venue</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Babujang High School Ground, Cuttack"
-                        value={newNewsLocation}
-                        onChange={e => setNewNewsLocation(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                      />
-                    </div>
-
-                    {/* Image Selector */}
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Cover Photo / Banner</label>
-                      <div className="flex items-center gap-3">
-                        <div className="w-20 h-14 rounded-lg bg-slate-100 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0">
-                          {newsImagePreview ? (
-                            <img src={newsImagePreview} alt="Preview" className="w-full h-full object-cover" />
-                          ) : (
-                            <ImageIcon className="w-6 h-6 text-slate-400" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            ref={newsPhotoInputRef}
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setUploading(true);
-                                try {
-                                  const url = await FoundationRepository.uploadImage(file, 'news');
-                                  setNewsImagePreview(url);
-                                } catch (err: any) {
-                                  alert(`Image upload failed: ${err?.message}`);
-                                } finally {
-                                  setUploading(false);
-                                }
-                              }
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => newsPhotoInputRef.current?.click()}
-                            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 flex items-center gap-1.5"
-                          >
-                            <Camera className="w-3.5 h-3.5 text-sky-600" />
-                            <span>{newsImagePreview ? 'Change Photo' : 'Upload Cover Image'}</span>
-                          </button>
-                          <p className="text-[10px] text-slate-500 mt-1">Recommended: Landscape photo (16:9 ratio, JPG/PNG/WebP)</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Summary En */}
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Description / Summary (English) *</label>
-                      <textarea
-                        rows={2}
-                        required
-                        placeholder="Write a brief overview of the news or event..."
-                        value={newNewsSummaryEn}
-                        onChange={e => setNewNewsSummaryEn(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                      />
-                    </div>
-
-                    {/* Summary Odia */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Description (Odia / ଓଡ଼ିଆ)</label>
-                      <textarea
-                        rows={2}
-                        placeholder="ଓଡ଼ିଆ ବିବରଣୀ..."
-                        value={newNewsSummaryOr}
-                        onChange={e => setNewNewsSummaryOr(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-odia"
-                      />
-                    </div>
-
-                    {/* Summary Hindi */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Description (Hindi / हिन्दी)</label>
-                      <textarea
-                        rows={2}
-                        placeholder="हिन्दी विवरण..."
-                        value={newNewsSummaryHi}
-                        onChange={e => setNewNewsSummaryHi(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-2 border-t border-sky-200">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddNews(false)}
-                      className="px-3.5 py-1.5 text-slate-600 hover:bg-slate-200/50 rounded-lg text-xs font-semibold"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={uploading}
-                      className="px-4 py-1.5 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>{uploading ? 'Publishing...' : 'Publish News / Event'}</span>
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* LIST OF NEWS ITEMS */}
-              <div className="space-y-3">
-                {(() => {
-                  const filtered = newsEvents.filter(item => {
-                    if (newsFilter === 'all') return true;
-                    if (newsFilter === 'upcoming') return item.isUpcoming;
-                    return item.category === newsFilter;
-                  });
-
-                  if (filtered.length === 0) {
-                    return (
-                      <div className="text-center py-10 bg-white rounded-xl border border-dashed border-slate-300">
-                        <Newspaper className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                        <p className="text-xs text-slate-500 font-medium">No items found in this category.</p>
-                        <button
-                          onClick={() => {
-                            setNewsFilter('all');
-                            setShowAddNews(true);
-                          }}
-                          className="mt-2 text-xs text-sky-700 hover:underline font-semibold"
-                        >
-                          + Post an article or upcoming event
-                        </button>
-                      </div>
-                    );
-                  }
-
-                  return filtered.map(item => {
-                    const isEditing = editingNewsId === item.id;
-
-                    if (isEditing) {
-                      return (
-                        <div key={item.id} className="p-4 bg-amber-50/70 border border-amber-300 rounded-xl space-y-3 shadow-2xs">
-                          <div className="flex items-center justify-between border-b border-amber-200 pb-2">
-                            <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                              <Pencil className="w-3.5 h-3.5 text-amber-700" />
-                              Editing Article: {item.titleEn}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={handleCancelNewsEdit}
-                              className="text-xs text-slate-500 hover:text-slate-800"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Category</label>
-                              <select
-                                value={editNewsData.category || item.category}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, category: e.target.value as any }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                              >
-                                <option value="news">Community News</option>
-                                <option value="event">Upcoming Event / Camp</option>
-                                <option value="press">Press Release</option>
-                              </select>
-                            </div>
-
-                            <div className="flex items-center pt-5">
-                              <label className="flex items-center gap-2 cursor-pointer select-none">
-                                <input
-                                  type="checkbox"
-                                  checked={Boolean(editNewsData.isUpcoming)}
-                                  onChange={e => setEditNewsData(prev => ({ ...prev, isUpcoming: e.target.checked }))}
-                                  className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500"
-                                />
-                                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                                  <Bell className="w-3.5 h-3.5 text-red-500" />
-                                  Mark as Upcoming Event
-                                </span>
-                              </label>
-                            </div>
-
-                            <div className="sm:col-span-2">
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (English) *</label>
-                              <input
-                                type="text"
-                                value={editNewsData.titleEn ?? item.titleEn}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, titleEn: e.target.value }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (Odia / ଓଡ଼ିଆ)</label>
-                              <input
-                                type="text"
-                                value={editNewsData.titleOr ?? item.titleOr ?? ''}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, titleOr: e.target.value }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-odia"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Title (Hindi / हिन्दी)</label>
-                              <input
-                                type="text"
-                                value={editNewsData.titleHi ?? item.titleHi ?? ''}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, titleHi: e.target.value }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Date Display</label>
-                              <input
-                                type="text"
-                                value={editNewsData.date ?? item.date}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, date: e.target.value }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Location / Venue</label>
-                              <input
-                                type="text"
-                                value={editNewsData.location ?? item.location}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, location: e.target.value }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                              />
-                            </div>
-
-                            {/* Photo Picker in Edit */}
-                            <div className="sm:col-span-2">
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Cover Photo</label>
-                              <div className="flex items-center gap-3">
-                                <img
-                                  src={editNewsData.imageUrl || item.imageUrl}
-                                  alt="Cover"
-                                  className="w-20 h-14 rounded-lg object-cover border border-slate-300 shrink-0"
-                                />
-                                <div className="flex-1">
-                                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 cursor-pointer">
-                                    <Camera className="w-3.5 h-3.5 text-sky-600" />
-                                    <span>Upload New Image</span>
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                          setUploading(true);
-                                          try {
-                                            const url = await FoundationRepository.uploadImage(file, 'news');
-                                            setEditNewsData(prev => ({ ...prev, imageUrl: url }));
-                                          } catch (err: any) {
-                                            alert(`Image upload error: ${err?.message}`);
-                                          } finally {
-                                            setUploading(false);
-                                          }
-                                        }
-                                      }}
-                                    />
-                                  </label>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="sm:col-span-2">
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Summary (English)</label>
-                              <textarea
-                                rows={2}
-                                value={editNewsData.summaryEn ?? item.summaryEn}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, summaryEn: e.target.value }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Summary (Odia)</label>
-                              <textarea
-                                rows={2}
-                                value={editNewsData.summaryOr ?? item.summaryOr ?? ''}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, summaryOr: e.target.value }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-odia"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-medium text-slate-700 mb-1">Summary (Hindi)</label>
-                              <textarea
-                                rows={2}
-                                value={editNewsData.summaryHi ?? item.summaryHi ?? ''}
-                                onChange={e => setEditNewsData(prev => ({ ...prev, summaryHi: e.target.value }))}
-                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end gap-2 pt-2 border-t border-amber-200">
-                            <button
-                              type="button"
-                              onClick={handleCancelNewsEdit}
-                              className="px-3 py-1 text-slate-600 hover:bg-slate-200/50 rounded-lg text-xs font-semibold"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleSaveNewsEdit}
-                              disabled={uploading}
-                              className="px-4 py-1 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
-                            >
-                              <Save className="w-3.5 h-3.5" />
-                              <span>{uploading ? 'Saving...' : 'Save Article Changes'}</span>
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div 
-                        key={item.id} 
-                        className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                      >
-                        <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                          {/* Direct Cover Photo Upload Button */}
-                          <div className="relative group shrink-0" title="Click or hover to change photo">
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.titleEn} 
-                              className="w-16 h-16 rounded-lg object-cover border border-slate-200" 
-                            />
-                            <label className="absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                              <Camera className="w-4 h-4 text-white" />
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) handleNewsPhotoUpload(item, file);
-                                }}
-                              />
-                            </label>
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                                item.category === 'press'
-                                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                                  : item.category === 'event'
-                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                              }`}>
-                                {item.category === 'press' ? 'Press Release' : item.category === 'event' ? 'Event' : 'News'}
-                              </span>
-
-                              {item.isUpcoming && (
-                                <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-[10px] font-bold border border-red-200 flex items-center gap-1">
-                                  <Bell className="w-2.5 h-2.5" />
-                                  Upcoming
-                                </span>
-                              )}
-
-                              <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-slate-400" />
-                                {item.date}
-                              </span>
-
-                              {item.location && (
-                                <span className="text-[11px] text-slate-500 hidden md:flex items-center gap-1">
-                                  <span>•</span>
-                                  <MapPin className="w-3 h-3 text-slate-400" />
-                                  <span className="truncate max-w-[150px]">{item.location}</span>
-                                </span>
-                              )}
-                            </div>
-
-                            <h5 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1">
-                              {item.titleEn}
-                            </h5>
-
-                            {item.titleOr && (
-                              <p className="text-[11px] text-slate-600 font-odia line-clamp-1">
-                                {item.titleOr}
-                              </p>
-                            )}
-
-                            <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                              {item.summaryEn}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-                          {/* Toggle Upcoming button */}
-                          <button
-                            onClick={() => handleToggleUpcomingNews(item)}
-                            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
-                              item.isUpcoming
-                                ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
-                                : 'text-slate-500 hover:bg-slate-100'
-                            }`}
-                            title={item.isUpcoming ? 'Remove Upcoming badge' : 'Mark as Upcoming event'}
-                          >
-                            <Bell className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Edit Details button */}
-                          <button
-                            onClick={() => handleStartEditNews(item)}
-                            className="p-1.5 text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors"
-                            title="Edit News Article"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Delete button */}
-                          <button
-                            onClick={() => handleDeleteNews(item.id, item.titleEn)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete Article"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-
-          {/* ======================================================= */}
-          {/* TAB 4: GALLERY (PHOTOS & VIDEOS)                         */}
+          {/* TAB 3: GALLERY & MEDIA (PHOTOS + VIDEOS)                */}
           {/* ======================================================= */}
           {activeTab === 'gallery' && (
             <div className="space-y-4">
-              
-              {/* Gallery Top Navigation: Switch between Photos & Video Posting */}
-              <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+              {/* Toggle between Photo Upload & Video Upload */}
+              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setGalleryTabMode('photo')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                      galleryTabMode === 'photo'
-                        ? 'bg-emerald-700 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Batch Photo Upload</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setGalleryTabMode('video')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                      galleryTabMode === 'video'
-                        ? 'bg-rose-700 text-white shadow-xs'
-                        : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200'
-                    }`}
-                  >
-                    <Video className="w-3.5 h-3.5" />
-                    <span>Upload Video / Reel / Link</span>
-                  </button>
+                  <span className="text-xs font-bold text-slate-800">Media Upload Mode:</span>
+                  <div className="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setGalleryUploadMode('photos')}
+                      className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                        galleryUploadMode === 'photos'
+                          ? 'bg-emerald-700 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Upload Photos</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGalleryUploadMode('video')}
+                      className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                        galleryUploadMode === 'video'
+                          ? 'bg-emerald-700 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Upload Video</span>
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
-                {/* Filter Pills */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400 font-medium mr-1">Filter Media:</span>
-                  {(['all', 'photo', 'video'] as const).map((mode) => {
-                    const isSelected = galleryFilter === mode;
-                    const count = mode === 'all' 
-                      ? galleryItems.length 
-                      : mode === 'photo'
-                      ? galleryItems.filter(i => i.mediaType !== 'video' && !i.videoUrl).length
-                      : galleryItems.filter(i => i.mediaType === 'video' || Boolean(i.videoUrl)).length;
-
-                    return (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setGalleryFilter(mode)}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                          isSelected
-                            ? 'bg-sky-900 text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {mode === 'all' ? 'All' : mode === 'photo' ? 'Photos' : 'Videos'} ({count})
-                      </button>
-                    );
-                  })}
-                </div>
+                <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
+                  {galleryItems.filter(g => g.mediaType === 'video').length} Videos • {galleryItems.filter(g => g.mediaType !== 'video').length} Photos
+                </span>
               </div>
 
-              {/* 1. PHOTO BATCH UPLOAD FORM */}
-              {galleryTabMode === 'photo' && (
-                <form onSubmit={handleBatchGalleryUpload} className="p-4 bg-white rounded-xl border border-emerald-200 shadow-2xs space-y-3">
+              {/* Mode A: Batch Photo Upload Form */}
+              {galleryUploadMode === 'photos' && (
+                <form onSubmit={handleBatchGalleryUpload} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
                   <div className="flex items-center justify-between border-b pb-2">
                     <div className="flex items-center gap-2">
                       <ImageIcon className="w-4 h-4 text-emerald-600" />
@@ -2439,7 +1575,7 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                         placeholder="e.g. Flood Relief Distribution"
                         value={newGalleryTitle}
                         onChange={e => setNewGalleryTitle(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-emerald-500"
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
                       />
                     </div>
 
@@ -2454,9 +1590,6 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                         <option value="medical">Medical Camp</option>
                         <option value="cultural">Cultural & Festival</option>
                         <option value="distribution">Blanket & Clothes</option>
-                        <option value="food">Annadanam / Free Meals</option>
-                        <option value="clothing">Vastradaan</option>
-                        <option value="community">Community Initiatives</option>
                       </select>
                     </div>
                   </div>
@@ -2519,473 +1652,517 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                 </form>
               )}
 
-              {/* 2. VIDEO UPLOAD / LINK POSTING FORM */}
-              {galleryTabMode === 'video' && (
-                <form onSubmit={handleVideoUploadSubmit} className="p-4 bg-white rounded-xl border border-rose-200 shadow-2xs space-y-4">
-                  <div className="flex items-center justify-between border-b border-rose-100 pb-2">
+              {/* Mode B: Video Upload Form */}
+              {galleryUploadMode === 'video' && (
+                <form onSubmit={handleVideoUpload} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between border-b pb-2">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-rose-100 text-rose-700 rounded-lg">
-                        <Video className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 block">Post Field Video / Documentary / Reel</span>
-                        <span className="text-[10px] text-slate-500">Upload video files (MP4/WebM) or embed YouTube links with auto thumbnail</span>
-                      </div>
+                      <Video className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-bold text-slate-800">Upload Foundation Video (MP4 / WebM or Direct URL)</span>
                     </div>
-
-                    {/* Mode Toggle: File vs Link */}
-                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-                      <button
-                        type="button"
-                        onClick={() => setVideoUploadMode('file')}
-                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${
-                          videoUploadMode === 'file'
-                            ? 'bg-white text-rose-900 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        Upload Video File
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setVideoUploadMode('link')}
-                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${
-                          videoUploadMode === 'link'
-                            ? 'bg-white text-rose-900 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        YouTube / Video Link
-                      </button>
-                    </div>
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Video Gallery
+                    </span>
                   </div>
 
-                  {/* Video Source Input Area */}
-                  {videoUploadMode === 'file' ? (
-                    <div className="p-4 bg-rose-50/50 rounded-xl border border-dashed border-rose-300 text-center space-y-3">
-                      <input
-                        type="file"
-                        ref={videoFileInputRef}
-                        onChange={handleVideoFileSelect}
-                        accept="video/mp4,video/webm,video/quicktime,video/ogg"
-                        className="hidden"
-                      />
-
-                      {videoFilePreview ? (
-                        <div className="space-y-3">
-                          <div className="relative max-w-sm mx-auto aspect-video rounded-xl overflow-hidden bg-black shadow-md border border-slate-700">
-                            <video src={videoFilePreview} controls className="w-full h-full object-contain" />
-                          </div>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-xs font-medium text-slate-700">
-                              Selected: <span className="font-semibold text-rose-900">{videoFile?.name}</span> ({((videoFile?.size || 0) / (1024 * 1024)).toFixed(1)} MB)
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setVideoFile(null);
-                                setVideoFilePreview(null);
-                              }}
-                              className="text-xs text-red-600 hover:underline font-semibold ml-2"
-                            >
-                              Change Video
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="py-4">
-                          <Film className="w-8 h-8 text-rose-500 mx-auto mb-2 opacity-80" />
-                          <p className="text-xs font-semibold text-slate-800">Select an MP4, WebM, or MOV video file</p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">Supports up to 150MB. Thumbnail will be auto-generated.</p>
-                          <button
-                            type="button"
-                            onClick={() => videoFileInputRef.current?.click()}
-                            className="mt-3 px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-semibold shadow-xs inline-flex items-center gap-1.5"
-                          >
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>Browse Video File</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                      <label className="block text-[11px] font-semibold text-slate-700">
-                        YouTube URL or Direct Video Link
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="url"
-                          placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-                          value={videoUrlInput}
-                          onChange={(e) => {
-                            setVideoUrlInput(e.target.value);
-                            const ytThumb = getYouTubeThumbnail(e.target.value);
-                            if (ytThumb && !videoPosterPreview) {
-                              setVideoPosterPreview(ytThumb);
-                            }
-                          }}
-                          className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-rose-500 font-mono"
-                        />
-                        <LinkIcon className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
-                      </div>
-                      <p className="text-[10px] text-slate-500">
-                        Paste any YouTube video or direct video link. The thumbnail will be extracted automatically.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Video Metadata Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Video Title (English) <span className="text-red-500">*</span>
-                      </label>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Video Title / Caption</label>
                       <input
                         type="text"
-                        placeholder="e.g. Free Ration & Flood Relief Distribution in Babujang"
-                        value={videoTitleEn}
-                        onChange={e => setVideoTitleEn(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-rose-500"
+                        placeholder="e.g. Annual Community Service & Food Drive"
+                        value={videoTitle}
+                        onChange={e => setVideoTitle(e.target.value)}
                         required
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
 
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-[11px] font-semibold text-slate-700">
-                          Odia Title (ଶୀର୍ଷକ)
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (videoTitleEn) {
-                              setVideoTitleOr(transliterateNameToOdia(videoTitleEn));
-                            }
-                          }}
-                          className="text-[10px] text-sky-700 hover:underline flex items-center gap-0.5"
-                        >
-                          <Sparkles className="w-2.5 h-2.5" /> Auto-transliterate
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="ବାବୁଜଙ୍ଗରେ ରିଲିଫ୍ ବଣ୍ଟନ ଭିଡିଓ..."
-                        value={videoTitleOr}
-                        onChange={e => setVideoTitleOr(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-oriya"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Hindi Title (वैकल्पिक)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="बाबुजंग में राहत सामग्री वितरण..."
-                        value={videoTitleHi}
-                        onChange={e => setVideoTitleHi(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Category</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Category</label>
                       <select
                         value={videoCategory}
                         onChange={e => setVideoCategory(e.target.value as any)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-emerald-500"
                       >
                         <option value="relief">Relief & Food Drive</option>
                         <option value="medical">Medical Camp</option>
                         <option value="cultural">Cultural & Festival</option>
                         <option value="distribution">Blanket & Clothes</option>
-                        <option value="food">Annadanam / Free Meals</option>
-                        <option value="clothing">Vastradaan</option>
-                        <option value="community">Community Initiatives</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Duration Tag (e.g. 2:30, 4:15)</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Upload Video File (.mp4, .webm, .mov)</label>
                       <input
-                        type="text"
-                        placeholder="e.g. 3:20"
-                        value={videoDurationInput}
-                        onChange={e => setVideoDurationInput(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-mono"
+                        type="file"
+                        ref={videoFileInputRef}
+                        accept="video/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setVideoUploadFile(file);
+                            setVideoFilePreview(URL.createObjectURL(file));
+                          }
+                        }}
                       />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => videoFileInputRef.current?.click()}
+                          className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 flex items-center gap-2"
+                        >
+                          <Video className="w-4 h-4 text-emerald-600" />
+                          <span>{videoUploadFile ? videoUploadFile.name : 'Choose Video File (Upload)'}</span>
+                        </button>
+                        {videoUploadFile && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setVideoUploadFile(null);
+                              setVideoFilePreview(null);
+                            }}
+                            className="text-xs text-red-600 hover:underline"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Location</label>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Or Direct Video URL (YouTube, MP4 Link)</label>
                       <input
-                        type="text"
-                        value={videoLocation}
-                        onChange={e => setVideoLocation(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Date / Month</label>
-                      <input
-                        type="text"
-                        value={videoDate}
-                        onChange={e => setVideoDate(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
+                        type="url"
+                        placeholder="https://example.com/video.mp4 or YouTube link"
+                        value={videoDirectUrl}
+                        onChange={e => setVideoDirectUrl(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-mono focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
                   </div>
 
-                  {/* Poster / Thumbnail Preview & Custom Upload */}
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-16 h-12 rounded-lg bg-slate-800 overflow-hidden shrink-0 border border-slate-300 relative">
-                        {videoPosterPreview ? (
-                          <img src={videoPosterPreview} alt="Thumbnail preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-500 text-[10px]">
-                            Auto Frame
-                          </div>
-                        )}
-                        <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[8px] px-1 rounded">
-                          Cover
-                        </span>
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold text-slate-800">Video Cover Thumbnail</div>
-                        <div className="text-[10px] text-slate-500">Auto-generated from video or choose custom image</div>
-                      </div>
-                    </div>
-
-                    <div>
+                  {/* Optional Custom Cover Photo for Video */}
+                  <div className="pt-2 border-t flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
                       <input
                         type="file"
-                        ref={videoPosterInputRef}
-                        onChange={handleVideoPosterSelect}
+                        ref={videoCoverInputRef}
                         accept="image/*"
                         className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploading(true);
+                            const url = await FoundationRepository.uploadImage(file, 'gallery');
+                            setVideoCoverPreview(url);
+                            setUploading(false);
+                            notify('Video cover thumbnail set!');
+                          }
+                        }}
                       />
                       <button
                         type="button"
-                        onClick={() => videoPosterInputRef.current?.click()}
-                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg border border-slate-300 inline-flex items-center gap-1"
+                        onClick={() => videoCoverInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-lg border font-medium flex items-center gap-1.5"
                       >
-                        <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Custom Cover Image</span>
+                        <Camera className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{videoCoverPreview ? 'Custom Thumbnail Selected ✓' : 'Add Video Thumbnail (Optional)'}</span>
                       </button>
                     </div>
-                  </div>
-
-                  {/* Upload Progress Status */}
-                  {uploadProgress && (
-                    <div className="text-xs font-semibold text-rose-800 bg-rose-50 p-2.5 rounded-lg border border-rose-200 text-center animate-pulse">
-                      {uploadProgress}
-                    </div>
-                  )}
-
-                  {/* Submit Button */}
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setVideoFile(null);
-                        setVideoFilePreview(null);
-                        setVideoPosterFile(null);
-                        setVideoPosterPreview(null);
-                        setVideoUrlInput('');
-                        setVideoDurationInput('');
-                        setVideoTitleEn('');
-                        setVideoTitleHi('');
-                        setVideoTitleOr('');
-                      }}
-                      className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 rounded-lg"
-                    >
-                      Reset
-                    </button>
 
                     <button
                       type="submit"
-                      disabled={uploading || (videoUploadMode === 'file' && !videoFile) || (videoUploadMode === 'link' && !videoUrlInput.trim()) || !videoTitleEn.trim()}
-                      className="px-4 py-2 bg-rose-700 hover:bg-rose-800 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-2xs flex items-center gap-1.5"
+                      disabled={uploading || (!videoUploadFile && !videoDirectUrl.trim())}
+                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-2xs flex items-center gap-1.5"
                     >
-                      <Video className="w-3.5 h-3.5" />
-                      <span>{uploading ? 'Processing & Posting Video...' : 'Publish Video to Gallery'}</span>
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{uploading ? 'Processing Video...' : 'Publish Video to Gallery'}</span>
+                    </button>
+                  </div>
+
+                  {/* Video File Preview */}
+                  {videoFilePreview && (
+                    <div className="mt-2 p-2 bg-slate-900 rounded-xl max-w-sm">
+                      <video src={videoFilePreview} controls className="w-full h-36 rounded-lg object-cover" />
+                    </div>
+                  )}
+                </form>
+              )}
+
+              {/* Gallery Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {galleryItems.map(item => {
+                  const isVideo = item.mediaType === 'video' || Boolean(item.videoUrl);
+
+                  return (
+                    <div key={item.id} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-900 aspect-square shadow-2xs">
+                      <img src={item.imageUrl} alt={item.titleEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      
+                      {/* Video Indicator Badge */}
+                      {isVideo && (
+                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-red-600/90 text-white rounded-md text-[10px] font-bold flex items-center gap-1 shadow-xs">
+                          <Play className="w-3 h-3 fill-white" />
+                          <span>Video</span>
+                        </div>
+                      )}
+
+                      {/* ALWAYS VISIBLE Delete Button at Top Right for easy tapping on Mobile & Desktop */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteGallery(item.id);
+                        }}
+                        className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full shadow-md z-20 flex items-center justify-center transition-transform"
+                        title="Delete Media Item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+
+                      {/* Bottom Caption Bar */}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-2 pt-4 text-white text-[11px] font-medium truncate">
+                        {item.titleEn}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================= */}
+          {/* TAB 4: NEWS & UPCOMING EVENTS                           */}
+          {/* ======================================================= */}
+          {activeTab === 'news_events' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-emerald-600" />
+                  <span>News & Upcoming Events ({newsList.length})</span>
+                </h4>
+
+                <button
+                  onClick={() => setShowAddNews(!showAddNews)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-medium shadow-2xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add News / Event</span>
+                </button>
+              </div>
+
+              {/* Add News / Event Form */}
+              {showAddNews && (
+                <form onSubmit={handleAddNews} className="p-4 bg-white rounded-xl border border-emerald-300 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-xs font-bold text-slate-800">Publish News or Upcoming Event</span>
+                    <button type="button" onClick={() => setShowAddNews(false)} className="text-slate-400 hover:text-slate-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Headline / Title (English)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Free Health & Eye Checkup Camp at Babujang"
+                        value={newNewsTitleEn}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setNewNewsTitleEn(val);
+                          setNewNewsTitleOr(transliterateNameToOdia(val));
+                        }}
+                        required
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Date (Display)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 25 Nov 2024"
+                        value={newNewsDate}
+                        onChange={e => setNewNewsDate(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Location</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Babujang High School Ground"
+                        value={newNewsLocation}
+                        onChange={e => setNewNewsLocation(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Category</label>
+                      <select
+                        value={newNewsCategory}
+                        onChange={e => setNewNewsCategory(e.target.value as any)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="event">Upcoming Event</option>
+                        <option value="news">Foundation News</option>
+                        <option value="health">Medical & Health</option>
+                        <option value="education">Education & Youth</option>
+                        <option value="relief">Relief & Welfare</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center pt-5">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newNewsIsUpcoming}
+                          onChange={e => setNewNewsIsUpcoming(e.target.checked)}
+                          className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                        />
+                        <span className="text-xs font-semibold text-slate-700">Mark as Upcoming Event (Highlight on Home Page)</span>
+                      </label>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Summary / Details (English)</label>
+                      <textarea
+                        rows={2}
+                        placeholder="Brief summary of the initiative, key activities, and community impact..."
+                        value={newNewsSummaryEn}
+                        onChange={e => setNewNewsSummaryEn(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        ref={newsPhotoInputRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploading(true);
+                            const url = await FoundationRepository.uploadImage(file, 'news');
+                            setNewsImagePreview(url);
+                            setUploading(false);
+                            notify('Cover photo uploaded for news item!');
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => newsPhotoInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-lg border font-medium flex items-center gap-1.5"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{newsImagePreview ? 'Photo Selected ✓' : 'Upload Cover Photo'}</span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={uploading}
+                      className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold"
+                    >
+                      Publish Item
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* Filtered Gallery Grid */}
-              {(() => {
-                const displayedItems = galleryItems.filter(item => {
-                  if (galleryFilter === 'all') return true;
-                  if (galleryFilter === 'photo') return item.mediaType !== 'video' && !item.videoUrl;
-                  if (galleryFilter === 'video') return item.mediaType === 'video' || Boolean(item.videoUrl);
-                  return true;
-                });
+              {/* News & Events List */}
+              <div className="space-y-3">
+                {newsList.map(item => {
+                  const isEditing = editingNewsId === item.id;
 
-                return (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-slate-500 px-1 font-medium">
-                      <span>Showing {displayedItems.length} media item{displayedItems.length !== 1 ? 's' : ''}</span>
-                      <span>Click any item to preview</span>
-                    </div>
-
-                    {displayedItems.length === 0 ? (
-                      <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-xs text-slate-400">
-                        No {galleryFilter === 'video' ? 'videos' : galleryFilter === 'photo' ? 'photos' : 'items'} found in gallery.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {displayedItems.map(item => {
-                          const isVideo = item.mediaType === 'video' || Boolean(item.videoUrl);
-
-                          return (
-                            <div 
-                              key={item.id} 
-                              onClick={() => setVideoPreviewModalItem(item)}
-                              className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-900 aspect-square shadow-2xs cursor-pointer hover:ring-2 hover:ring-sky-500 transition-all"
-                            >
-                              <img src={item.imageUrl} alt={item.titleEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform opacity-90 group-hover:opacity-100" />
-                              
-                              {/* Video Indicator Badges */}
-                              {isVideo ? (
-                                <div className="absolute top-2 left-2 z-10">
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/90 text-white text-[9px] font-bold uppercase tracking-wider backdrop-blur-xs border border-rose-300/40">
-                                    <Video className="w-2.5 h-2.5" />
-                                    <span>{item.duration || 'Video'}</span>
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="absolute top-2 left-2 z-10">
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-900/70 text-slate-200 text-[9px] font-mono backdrop-blur-xs">
-                                    <ImageIcon className="w-2.5 h-2.5" />
-                                  </span>
-                                </div>
-                              )}
-
-                              {/* Play Button Overlay for Videos */}
-                              {isVideo && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                  <div className="w-9 h-9 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform border border-white/80">
-                                    <Play className="w-4 h-4 fill-current ml-0.5" />
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Delete Button at Top Right */}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteGallery(item.id);
-                                }}
-                                className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full shadow-md z-20 flex items-center justify-center transition-transform"
-                                title="Delete Media"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Bottom Caption Bar */}
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/95 via-slate-950/70 to-transparent p-2 pt-5 text-white text-[11px] leading-tight font-medium">
-                                <span className="line-clamp-1">{item.titleEn}</span>
-                                <span className="text-[9px] text-slate-300 font-light block capitalize">{item.category} • {item.date || 'Babujang'}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
-            </div>
-          )}
-
-          {/* Operator Gallery Item Preview Modal */}
-          {videoPreviewModalItem && (
-            <div 
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-              onClick={() => setVideoPreviewModalItem(null)}
-            >
-              <div 
-                className="relative max-w-2xl w-full bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 text-white"
-                onClick={e => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={() => setVideoPreviewModalItem(null)}
-                  className="absolute top-3 right-3 z-30 p-2 bg-black/60 hover:bg-black text-white rounded-full transition-colors border border-white/20"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-
-                <div className="aspect-video bg-black flex items-center justify-center max-h-[60vh]">
-                  {(() => {
-                    const isVideo = videoPreviewModalItem.mediaType === 'video' || Boolean(videoPreviewModalItem.videoUrl);
-                    const ytMatch = videoPreviewModalItem.videoUrl?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-
-                    if (isVideo && ytMatch && ytMatch[1]) {
-                      return (
-                        <iframe
-                          src={`https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`}
-                          title={videoPreviewModalItem.titleEn}
-                          className="w-full h-full border-0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      );
-                    }
-
-                    if (isVideo && videoPreviewModalItem.videoUrl) {
-                      return (
-                        <video
-                          src={videoPreviewModalItem.videoUrl}
-                          poster={videoPreviewModalItem.imageUrl}
-                          controls
-                          autoPlay
-                          className="w-full h-full object-contain"
-                        />
-                      );
-                    }
-
+                  if (isEditing) {
                     return (
-                      <img
-                        src={videoPreviewModalItem.imageUrl}
-                        alt={videoPreviewModalItem.titleEn}
-                        className="w-full h-full object-contain"
-                      />
-                    );
-                  })()}
-                </div>
+                      <div key={item.id} className="bg-white p-4 rounded-xl border border-emerald-400 shadow-md space-y-3">
+                        <div className="flex items-center justify-between border-b pb-2">
+                          <span className="text-xs font-bold text-slate-800">Edit News / Event: {item.titleEn}</span>
+                          <button onClick={() => setEditingNewsId(null)} className="text-slate-400 hover:text-slate-600">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
 
-                <div className="p-4 space-y-1.5 border-t border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-950 text-sky-200 border border-sky-800 uppercase">
-                      {videoPreviewModalItem.category}
-                    </span>
-                    {videoPreviewModalItem.duration && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-950 text-rose-200 border border-rose-800">
-                        {videoPreviewModalItem.duration}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {videoPreviewModalItem.date} • {videoPreviewModalItem.location}
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-semibold text-white">
-                    {videoPreviewModalItem.titleEn}
-                  </h4>
-                  {videoPreviewModalItem.titleOr && (
-                    <p className="text-xs text-sky-200 font-oriya">
-                      {videoPreviewModalItem.titleOr}
-                    </p>
-                  )}
-                </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="sm:col-span-2">
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Headline (English)</label>
+                            <input
+                              type="text"
+                              value={editNewsData.titleEn || ''}
+                              onChange={e => {
+                                const newTitle = e.target.value;
+                                setEditNewsData({
+                                  ...editNewsData,
+                                  titleEn: newTitle,
+                                  titleOr: transliterateNameToOdia(newTitle)
+                                });
+                              }}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Date</label>
+                            <input
+                              type="text"
+                              value={editNewsData.date || ''}
+                              onChange={e => setEditNewsData({ ...editNewsData, date: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Location</label>
+                            <input
+                              type="text"
+                              value={editNewsData.location || ''}
+                              onChange={e => setEditNewsData({ ...editNewsData, location: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Summary (English)</label>
+                            <textarea
+                              rows={2}
+                              value={editNewsData.summaryEn || ''}
+                              onChange={e => setEditNewsData({ ...editNewsData, summaryEn: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 mb-1">Headline (Odia)</label>
+                            <input
+                              type="text"
+                              value={editNewsData.titleOr || ''}
+                              onChange={e => setEditNewsData({ ...editNewsData, titleOr: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 font-serif"
+                            />
+                          </div>
+
+                          <div className="flex items-center pt-5">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(editNewsData.isUpcoming)}
+                                onChange={e => setEditNewsData({ ...editNewsData, isUpcoming: e.target.checked })}
+                                className="w-4 h-4 text-emerald-600 rounded"
+                              />
+                              <span className="text-xs font-semibold text-slate-700">Mark as Upcoming Event</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <label className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer inline-flex items-center gap-1.5">
+                            <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Change Cover Photo</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setUploading(true);
+                                  const url = await FoundationRepository.uploadImage(file, 'news');
+                                  setEditNewsData({ ...editNewsData, imageUrl: url });
+                                  setUploading(false);
+                                  notify('Cover photo updated for draft!');
+                                }
+                              }}
+                            />
+                          </label>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingNewsId(null)}
+                              className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSaveNewsEdit}
+                              className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold"
+                            >
+                              Save News Changes
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={item.id} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Direct Cover Photo Upload Button on News Card */}
+                        <div className="relative group shrink-0" title="Click or hover to change cover photo">
+                          <img src={item.imageUrl} alt={item.titleEn} className="w-14 h-14 rounded-lg object-cover" />
+                          <label className="absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                            <Camera className="w-4 h-4 text-white" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleNewsPhotoUpload(item, file);
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h5 className="font-semibold text-slate-900 text-xs truncate max-w-sm">{item.titleEn}</h5>
+                            {item.isUpcoming && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                Upcoming Event
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">{item.summaryEn}</p>
+                          <div className="flex items-center gap-3 text-[10px] text-slate-400 font-mono mt-1">
+                            <span>📅 {item.date}</span>
+                            <span>📍 {item.location}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleStartEditNews(item)}
+                          className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
+                          title="Edit News / Event"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNews(item.id, item.titleEn)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0"
+                          title="Delete Item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

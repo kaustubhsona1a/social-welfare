@@ -6,22 +6,12 @@ import { Newspaper, Calendar, MapPin, Tag, ChevronRight, Megaphone, Bell } from 
 
 interface NewsAndEventsProps {
   currentLang: Language;
-  items?: NewsEventItem[];
+  newsEvents?: NewsEventItem[];
 }
 
-export const NewsAndEventsSection: React.FC<NewsAndEventsProps> = ({ currentLang, items }) => {
+export const NewsAndEventsSection: React.FC<NewsAndEventsProps> = ({ currentLang, newsEvents }) => {
   const [filter, setFilter] = useState<'all' | 'news' | 'event' | 'press'>('all');
-  const [localNews, setLocalNews] = useState<NewsEventItem[]>(() => FoundationRepository.getNewsEvents());
-
-  React.useEffect(() => {
-    const handleUpdate = () => {
-      setLocalNews(FoundationRepository.getNewsEvents());
-    };
-    window.addEventListener('repository_updated', handleUpdate);
-    return () => window.removeEventListener('repository_updated', handleUpdate);
-  }, []);
-
-  const newsList = items || localNews;
+  const newsList = newsEvents && newsEvents.length > 0 ? newsEvents : FoundationRepository.getNewsEvents();
 
   const filtered = newsList.filter(item => {
     if (filter === 'all') return true;

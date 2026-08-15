@@ -368,89 +368,37 @@ export const INITIAL_SUCCESS_STORIES: SuccessStory[] = [
 
 export const INITIAL_GALLERY: GalleryItem[] = [
   {
-    id: "vid-1",
-    titleEn: "Ground Video: Food & Ration Distribution to Destitute Seniors",
-    titleOr: "ବାବୁଜଙ୍ଗରେ ବୃଦ୍ଧା ମହିଳାଙ୍କୁ ରାସନ ଓ ଅନ୍ନଦାନ କାର୍ଯ୍ୟକ୍ରମର ଭିଡିଓ",
-    category: "food",
-    mediaType: "video",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    imageUrl: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800",
-    date: "July 2026",
-    location: "Babujang Panchayat, Cuttack",
-    duration: "1:45"
-  },
-  {
     id: "gal-1",
     titleEn: "Food Distribution Drive at Babujang Panchayat Office",
     titleOr: "ବାବୁଜଙ୍ଗ ପଞ୍ଚାୟତରେ ଅନ୍ନଦାନ କାର୍ଯ୍ୟକ୍ରମ",
     category: "food",
-    mediaType: "photo",
     date: "July 2026",
     imageUrl: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800",
     location: "Babujang, Cuttack"
-  },
-  {
-    id: "vid-2",
-    titleEn: "Documentary: Free Health & Diagnostic Camp by Senior SCB Doctors",
-    titleOr: "ଡାକ୍ତରୀ ଦଳ ଦ୍ୱାରା ମାଗଣା ସ୍ୱାସ୍ଥ୍ୟ ଶିବିର ଡକ୍ୟୁମେଣ୍ଟାରୀ ଭିଡିଓ",
-    category: "medical",
-    mediaType: "video",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    imageUrl: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800",
-    date: "June 2026",
-    location: "Kishore Nagar Community Hall",
-    duration: "2:30"
   },
   {
     id: "gal-2",
     titleEn: "Free Health Checkup & Blood Pressure Camp",
     titleOr: "ମାଗଣା ସ୍ୱାସ୍ଥ୍ୟ ପରୀକ୍ଷା ଶିବିର",
     category: "medical",
-    mediaType: "photo",
     date: "June 2026",
     imageUrl: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800",
     location: "Kishore Nagar Community Hall"
-  },
-  {
-    id: "vid-3",
-    titleEn: "Field Report: Fast Emergency Relief Response & Volunteer Operation",
-    titleOr: "ଜରୁରୀକାଳୀନ ରିଲିଫ୍ ଓ ଯୁବ ସ୍ୱେଚ୍ଛାସେବୀଙ୍କ କାର୍ଯ୍ୟକ୍ରମ ଭିଡିଓ",
-    category: "community",
-    mediaType: "video",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
-    imageUrl: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&q=80&w=800",
-    date: "May 2026",
-    location: "Tyendakura River Bank, Cuttack",
-    duration: "3:10"
   },
   {
     id: "gal-3",
     titleEn: "Blanket and Sarees Distribution Ceremony",
     titleOr: "ବସ୍ତ୍ରଦାନ ଓ କମ୍ବଳ ବଣ୍ଟନ ଉତ୍ସବ",
     category: "clothing",
-    mediaType: "photo",
     date: "January 2026",
     imageUrl: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&q=80&w=800",
     location: "Tyendakura High School Ground"
-  },
-  {
-    id: "vid-4",
-    titleEn: "Vastradaana Winter Blankets & Clothes Distribution Ceremony",
-    titleOr: "ଶୀତ ବସ୍ତ୍ରଦାନ ଓ କମ୍ବଳ ବଣ୍ଟନ ଉତ୍ସବ ଭିଡିଓ",
-    category: "clothing",
-    mediaType: "video",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800",
-    date: "January 2026",
-    location: "Tyendakura High School Ground",
-    duration: "2:15"
   },
   {
     id: "gal-4",
     titleEn: "Youth Volunteer Team Meeting & Planning Session",
     titleOr: "ଯୁବ ସ୍ୱେଚ୍ଛାସେବୀଙ୍କ ବୈଠକ",
     category: "community",
-    mediaType: "photo",
     date: "May 2026",
     imageUrl: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800",
     location: "SWF Office, Babujang"
@@ -460,7 +408,6 @@ export const INITIAL_GALLERY: GalleryItem[] = [
     titleEn: "School Notebooks & Bag Distribution for Village Students",
     titleOr: "ସ୍କୁଲ ଛାତ୍ରଛାତ୍ରୀଙ୍କୁ ବହି ଓ ବ୍ୟାଗ ପ୍ରଦାନ",
     category: "event",
-    mediaType: "photo",
     date: "April 2026",
     imageUrl: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=800",
     location: "Babujang Primary School"
@@ -470,7 +417,6 @@ export const INITIAL_GALLERY: GalleryItem[] = [
     titleEn: "Monsoon Emergency Relief Kit Packing",
     titleOr: "ବର୍ଷା ଦିନିଆ ରିଲିଫ୍ କିଟ୍ ପ୍ୟାକିଂ",
     category: "food",
-    mediaType: "photo",
     date: "May 2026",
     imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800",
     location: "Tyendakura Depot"

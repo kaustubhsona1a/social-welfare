@@ -334,83 +334,21 @@ export class FoundationRepository {
       // Ensure storage bucket is ready
       this.ensureBucketExists().catch(() => {});
 
-      // 1. Fetch Office Bearers (robust query that works with any schema)
-      let leadersData: any[] | null = null;
+      // 1. Fetch Settings First (Logo URL, Hero BG URL, Leadership Order, Payment)
+      let settingsData: any[] | null = null;
       try {
-        const { data, error } = await supabase.from('office_bearers').select('*');
-        if (!error && data) {
-          leadersData = data;
-        } else if (error) {
-          console.warn('office_bearers fetch notice:', error.message);
+        const { data: sData, error: sErr } = await supabase.from('foundation_settings').select('*');
+        if (!sErr && sData) {
+          settingsData = sData;
+        } else if (sErr) {
+          notifySupabaseError(`foundation_settings fetch failed: ${sErr.message}`);
         }
       } catch (err: any) {
-        console.warn('office_bearers fetch exception:', err?.message);
+        console.warn('foundation_settings fetch notice:', err?.message);
       }
 
-      if (leadersData && leadersData.length > 0) {
-        const mapped = leadersData.map((row, idx) => mapLeaderFromDb(row, idx));
-        // Sort if displayOrder was present, otherwise keep fetched order
-        mapped.sort((a, b) => {
-          if (typeof a.displayOrder === 'number' && typeof b.displayOrder === 'number') {
-            return a.displayOrder - b.displayOrder;
-          }
-          return 0;
-        });
-        localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(mapped));
-      }
-
-      // 2. Fetch Drives
-      const { data: drivesData, error: dErr } = await supabase.from('drives').select('*');
-      if (dErr) {
-        notifySupabaseError(`drives fetch failed: ${dErr.message}`);
-      } else if (drivesData && drivesData.length > 0) {
-        const mapped = drivesData.map(mapDriveFromDb);
-        localStorage.setItem(STORAGE_KEYS.DRIVES, JSON.stringify(mapped));
-      }
-
-      // 3. Fetch Gallery
-      const { data: galleryData, error: gErr } = await supabase.from('gallery').select('*');
-      if (gErr) {
-        notifySupabaseError(`gallery fetch failed: ${gErr.message}`);
-      } else if (galleryData && galleryData.length > 0) {
-        const mapped = galleryData.map(mapGalleryFromDb);
-        localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(mapped));
-      }
-
-      // 4. Fetch News & Events
-      try {
-        const { data: newsData, error: nErr } = await supabase.from('news_events').select('*');
-        if (!nErr && newsData && newsData.length > 0) {
-          const mapped = newsData.map(mapNewsEventFromDb);
-          localStorage.setItem('swf_news_events_v1', JSON.stringify(mapped));
-        }
-      } catch (err: any) {
-        console.warn('news_events table check:', err?.message);
-      }
-
-      // 5. Fetch Donations
-      const { data: donationsData, error: donErr } = await supabase.from('donations').select('*');
-      if (donErr) {
-        notifySupabaseError(`donations fetch failed: ${donErr.message}`);
-      } else if (donationsData && donationsData.length > 0) {
-        const mapped = donationsData.map(mapDonorFromDb);
-        localStorage.setItem(STORAGE_KEYS.DONORS, JSON.stringify(mapped));
-      }
-
-      // 6. Fetch Assistance Requests
-      const { data: reqData, error: reqErr } = await supabase.from('assistance_requests').select('*');
-      if (reqErr) {
-        notifySupabaseError(`assistance_requests fetch failed: ${reqErr.message}`);
-      } else if (reqData && reqData.length > 0) {
-        const mapped = reqData.map(mapRequestFromDb);
-        localStorage.setItem(STORAGE_KEYS.ASSISTANCE, JSON.stringify(mapped));
-      }
-
-      // 7. Fetch Settings (Logo URL & Hero BG URL)
-      const { data: settingsData, error: sErr } = await supabase.from('foundation_settings').select('*');
-      if (sErr) {
-        notifySupabaseError(`foundation_settings fetch failed: ${sErr.message}`);
-      } else if (settingsData && settingsData.length > 0) {
+      let leadershipOrderIds: string[] = [];
+      if (settingsData && settingsData.length > 0) {
         const logoSetting = settingsData.find((s: any) => s.key === 'logo_url');
         if (logoSetting) {
           if (logoSetting.value) {
@@ -429,6 +367,16 @@ export class FoundationRepository {
             localStorage.removeItem('custom_hero_bg');
           }
           window.dispatchEvent(new Event('hero_bg_updated'));
+        }
+
+        const orderSetting = settingsData.find((s: any) => s.key === 'leadership_order');
+        if (orderSetting && orderSetting.value) {
+          try {
+            const parsed = JSON.parse(orderSetting.value);
+            if (Array.isArray(parsed)) leadershipOrderIds = parsed;
+          } catch (e) {
+            console.warn('Failed to parse leadership_order setting:', e);
+          }
         }
 
         // Fetch payment settings
@@ -452,6 +400,92 @@ export class FoundationRepository {
           localStorage.setItem(STORAGE_KEYS.PAYMENT, JSON.stringify(updatedInfo));
           window.dispatchEvent(new Event('payment_info_updated'));
         }
+      }
+
+      // 2. Fetch Office Bearers (robust query that works with any schema)
+      let leadersData: any[] | null = null;
+      try {
+        const { data, error } = await supabase.from('office_bearers').select('*');
+        if (!error && data) {
+          leadersData = data;
+        } else if (error) {
+          console.warn('office_bearers fetch notice:', error.message);
+        }
+      } catch (err: any) {
+        console.warn('office_bearers fetch exception:', err?.message);
+      }
+
+      if (leadersData && leadersData.length > 0) {
+        let mapped = leadersData.map((row, idx) => mapLeaderFromDb(row, idx));
+        
+        // Sort using leadership_order if present in foundation_settings
+        if (leadershipOrderIds.length > 0) {
+          mapped.sort((a, b) => {
+            const idxA = leadershipOrderIds.indexOf(a.id);
+            const idxB = leadershipOrderIds.indexOf(b.id);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+          });
+        } else {
+          // Otherwise sort if displayOrder was present
+          const hasOrderData = mapped.some(m => typeof m.displayOrder === 'number' && m.displayOrder > 0);
+          if (hasOrderData) {
+            mapped.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+          }
+        }
+
+        // Re-assign displayOrder sequentially
+        mapped = mapped.map((l, idx) => ({ ...l, displayOrder: idx }));
+        localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(mapped));
+      }
+
+      // 3. Fetch Drives
+      const { data: drivesData, error: dErr } = await supabase.from('drives').select('*');
+      if (dErr) {
+        notifySupabaseError(`drives fetch failed: ${dErr.message}`);
+      } else if (drivesData && drivesData.length > 0) {
+        const mapped = drivesData.map(mapDriveFromDb);
+        localStorage.setItem(STORAGE_KEYS.DRIVES, JSON.stringify(mapped));
+      }
+
+      // 4. Fetch Gallery
+      const { data: galleryData, error: gErr } = await supabase.from('gallery').select('*');
+      if (gErr) {
+        notifySupabaseError(`gallery fetch failed: ${gErr.message}`);
+      } else if (galleryData && galleryData.length > 0) {
+        const mapped = galleryData.map(mapGalleryFromDb);
+        localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(mapped));
+      }
+
+      // 5. Fetch News & Events
+      try {
+        const { data: newsData, error: nErr } = await supabase.from('news_events').select('*');
+        if (!nErr && newsData && newsData.length > 0) {
+          const mapped = newsData.map(mapNewsEventFromDb);
+          localStorage.setItem('swf_news_events_v1', JSON.stringify(mapped));
+        }
+      } catch (err: any) {
+        console.warn('news_events table check:', err?.message);
+      }
+
+      // 6. Fetch Donations
+      const { data: donationsData, error: donErr } = await supabase.from('donations').select('*');
+      if (donErr) {
+        notifySupabaseError(`donations fetch failed: ${donErr.message}`);
+      } else if (donationsData && donationsData.length > 0) {
+        const mapped = donationsData.map(mapDonorFromDb);
+        localStorage.setItem(STORAGE_KEYS.DONORS, JSON.stringify(mapped));
+      }
+
+      // 7. Fetch Assistance Requests
+      const { data: reqData, error: reqErr } = await supabase.from('assistance_requests').select('*');
+      if (reqErr) {
+        notifySupabaseError(`assistance_requests fetch failed: ${reqErr.message}`);
+      } else if (reqData && reqData.length > 0) {
+        const mapped = reqData.map(mapRequestFromDb);
+        localStorage.setItem(STORAGE_KEYS.ASSISTANCE, JSON.stringify(mapped));
       }
 
       window.dispatchEvent(new Event('repository_updated'));
@@ -595,8 +629,9 @@ export class FoundationRepository {
       updated = [...leadership, newMember];
     }
     
-    // Sort
+    // Sort and re-index
     updated.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    updated = updated.map((l, idx) => ({ ...l, displayOrder: idx }));
     localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(updated));
 
     if (supabase) {
@@ -614,6 +649,13 @@ export class FoundationRepository {
         } else {
           console.log('Successfully saved office bearer to Supabase:', bearer.nameEn);
         }
+
+        // Also persist entire ordering IDs in foundation_settings
+        const orderIds = updated.map(l => l.id);
+        await supabase.from('foundation_settings').upsert({
+          key: 'leadership_order',
+          value: JSON.stringify(orderIds)
+        });
       } catch (err: any) {
         notifySupabaseError(`Save office_bearer exception: ${err?.message}`);
       }
@@ -636,11 +678,18 @@ export class FoundationRepository {
         const { error } = await supabase.from('office_bearers').upsert(payload);
         if (error) {
           if (error.message && error.message.includes('display_order')) {
-            console.warn('display_order column not in table; order preserved in client local storage.');
+            console.warn('display_order column not in table; fallback to foundation_settings.');
           } else {
             notifySupabaseError(`Save leadership order error: ${error.message}`);
           }
         }
+
+        // Persist explicit order array in foundation_settings so it never resets on refresh
+        const orderIds = updated.map(l => l.id);
+        await supabase.from('foundation_settings').upsert({
+          key: 'leadership_order',
+          value: JSON.stringify(orderIds)
+        });
       } catch (err: any) {
         notifySupabaseError(`Save leadership order exception: ${err?.message}`);
       }
@@ -677,6 +726,13 @@ export class FoundationRepository {
       try {
         const { error } = await supabase.from('office_bearers').delete().eq('id', id);
         if (error) notifySupabaseError(`Delete office_bearer error: ${error.message}`);
+
+        // Update ordering list in foundation_settings
+        const orderIds = reordered.map(l => l.id);
+        await supabase.from('foundation_settings').upsert({
+          key: 'leadership_order',
+          value: JSON.stringify(orderIds)
+        });
       } catch (err: any) {
         notifySupabaseError(`Delete office_bearer exception: ${err?.message}`);
       }

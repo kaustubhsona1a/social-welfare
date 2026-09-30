@@ -27,6 +27,28 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenSupabaseModal,
   onOpenOperatorPanel
 }) => {
+  const lastTapTimeRef = React.useRef<number>(0);
+  const tapCountRef = React.useRef<number>(0);
+
+  const handleTripleTap = (e: React.MouseEvent | React.TouchEvent) => {
+    const now = Date.now();
+    if (now - lastTapTimeRef.current < 30) return;
+    if (now - lastTapTimeRef.current < 700) {
+      tapCountRef.current += 1;
+    } else {
+      tapCountRef.current = 1;
+    }
+    lastTapTimeRef.current = now;
+
+    const detail = 'detail' in e ? (e as React.MouseEvent).detail : 0;
+    if (tapCountRef.current >= 3 || detail >= 3) {
+      tapCountRef.current = 0;
+      if (onOpenOperatorPanel) {
+        onOpenOperatorPanel();
+      }
+    }
+  };
+
   return (
     <footer className="bg-slate-950 text-slate-300 border-t border-slate-900">
       

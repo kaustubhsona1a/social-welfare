@@ -21,8 +21,18 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({
 
   const sortedTeam = [...leadership].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
 
+  const isAdvisory = (m: OfficeBearer) => 
+    m.category === 'advisory' || /advisor/i.test(m.roleEn) || /ଉପଦେଷ୍ଟା/i.test(m.roleOr);
+
+  const isExecutive = (m: OfficeBearer) => 
+    (m.category === 'executive' || !m.category) && !/advisor/i.test(m.roleEn) && !/ଉପଦେଷ୍ଟା/i.test(m.roleOr);
+
   const filteredTeam = activeTab === 'all'
     ? sortedTeam
+    : activeTab === 'advisory'
+    ? sortedTeam.filter(isAdvisory)
+    : activeTab === 'executive'
+    ? sortedTeam.filter(isExecutive)
     : sortedTeam.filter(m => m.category === activeTab);
 
   return (

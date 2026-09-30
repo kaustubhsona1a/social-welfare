@@ -42,9 +42,10 @@ export const Hero: React.FC<HeroProps> = ({
   const scrollRatio = Math.min(1, Math.max(0, scrollY / 300));
 
   // Default fallbacks if no custom operator background uploaded
-  const defaultBg = "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=1600&auto=format&fit=crop";
-  const activeDesktopBg = desktopBgUrl || defaultBg;
-  const activeMobileBg = mobileBgUrl || desktopBgUrl || defaultBg;
+  const defaultDesktopBg = "https://kvynutrckfdjorwwzhzb.supabase.co/storage/v1/object/public/foundation_images/branding/1786374388193_whmyf.png";
+  const defaultMobileBg = "/mobile-hero-bg.png";
+  const activeDesktopBg = desktopBgUrl || defaultDesktopBg;
+  const activeMobileBg = mobileBgUrl || defaultMobileBg;
 
   return (
     <section id="home" className="relative overflow-hidden min-h-[calc(100dvh-70px)] sm:min-h-[85vh] flex items-center justify-center">

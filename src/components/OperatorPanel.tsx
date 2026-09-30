@@ -971,12 +971,13 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[11px] font-medium text-slate-600 mb-1">Display Order</label>
+                        <label className="block text-[11px] font-medium text-slate-600 mb-1">Display Order (1 = Top)</label>
                         <input
                           type="number"
                           placeholder="e.g. 1"
-                          value={newLeaderDisplayOrder ?? ''}
-                          onChange={e => setNewLeaderDisplayOrder(e.target.value ? Number(e.target.value) : undefined)}
+                          min="1"
+                          value={newLeaderDisplayOrder !== undefined ? (newLeaderDisplayOrder + 1) : ''}
+                          onChange={e => setNewLeaderDisplayOrder(e.target.value ? Math.max(0, Number(e.target.value) - 1) : undefined)}
                           className="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
                       </div>
@@ -1101,8 +1102,9 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                             <input
                               type="number"
                               placeholder="e.g. 1"
-                              value={editLeaderData.displayOrder !== undefined ? editLeaderData.displayOrder : ''}
-                              onChange={e => setEditLeaderData({ ...editLeaderData, displayOrder: e.target.value ? Number(e.target.value) : undefined })}
+                              min="1"
+                              value={editLeaderData.displayOrder !== undefined ? (editLeaderData.displayOrder + 1) : ''}
+                              onChange={e => setEditLeaderData({ ...editLeaderData, displayOrder: e.target.value ? Math.max(0, Number(e.target.value) - 1) : undefined })}
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border"
                             />
                           </div>
@@ -1133,8 +1135,8 @@ export const OperatorPanel: React.FC<OperatorPanelProps> = ({
                       <div className="flex items-center gap-3 min-w-0">
                         {/* Order Number Badge */}
                         <div className="flex flex-col items-center justify-center shrink-0">
-                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded font-mono" title={`Display Order: ${member.displayOrder ?? (index + 1)}`}>
-                            #{member.displayOrder ?? (index + 1)}
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded font-mono" title={`Display Order: #${typeof member.displayOrder === 'number' ? member.displayOrder + 1 : (index + 1)}`}>
+                            #{typeof member.displayOrder === 'number' ? member.displayOrder + 1 : (index + 1)}
                           </span>
                         </div>
 

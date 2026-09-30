@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     const now = Date.now();
     if (now - lastTapTimeRef.current < 30) return; // ignore duplicate click right after touchend
 
-    if (now - lastTapTimeRef.current < 550) {
+    if (now - lastTapTimeRef.current < 700) {
       tapCountRef.current += 1;
     } else {
       tapCountRef.current = 1;
@@ -136,7 +136,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           
           {/* Brand Logo & Name */}
           <div 
-            onClick={() => handleNavClick('home')} 
+            onClick={(e) => {
+              handleTripleTap(e);
+              handleNavClick('home');
+            }} 
+            onTouchEnd={handleTripleTap}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -183,17 +187,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Controls */}
           <div className="hidden md:flex items-center gap-2">
-            {onOpenOperatorPanel && (
-              <button
-                onClick={onOpenOperatorPanel}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50/90 hover:bg-emerald-100 text-emerald-900 text-xs font-medium transition-all shrink-0"
-                title="Open Foundation Operator & Image Upload Panel"
-              >
-                <Camera className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Operator Hub</span>
-              </button>
-            )}
-
             {/* 3-Language Toggle */}
             <div className="flex items-center bg-sky-50 border border-sky-200 rounded-full p-0.5 text-xs font-semibold shrink-0">
               <button

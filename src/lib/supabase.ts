@@ -75,7 +75,23 @@ const notifySupabaseError = (msg: string) => {
 // DB MAPPERS (camelCase TS <-> snake_case SQL)
 // ==========================================
 
-const mapLeaderToDb = (l: OfficeBearer, index: number = 0) => {
+export const getRolePriority = (role: string): number => {
+  const r = (role || '').toLowerCase();
+  if (r.includes('president')) return 1;
+  if (r.includes('founder')) return 2;
+  if (r.includes('chairperson') || r.includes('chairman')) return 3;
+  if (r.includes('secretary')) return 4;
+  if (r.includes('treasurer')) return 5;
+  if (r.includes('vice president')) return 6;
+  if (r.includes('senior advisor')) return 7;
+  if (r.includes('advisor') && !r.includes('medical')) return 8;
+  if (r.includes('medical')) return 9;
+  if (r.includes('trustee')) return 10;
+  if (r.includes('coordinator')) return 11;
+  return 20;
+};
+
+const mapLeaderToDb = (l: OfficeBearer) => {
   const nameEn = l.nameEn || 'Leader';
   const roleEn = l.roleEn || 'Member';
   return {
@@ -88,8 +104,7 @@ const mapLeaderToDb = (l: OfficeBearer, index: number = 0) => {
     bio_en: l.bioEn || '',
     bio_or: l.bioOr || '',
     phone: l.phone || '',
-    image_url: l.imageUrl || '',
-    display_order: typeof l.displayOrder === 'number' ? l.displayOrder : index
+    image_url: l.imageUrl || ''
   };
 };
 
@@ -359,15 +374,24 @@ export class FoundationRepository {
           window.dispatchEvent(new Event('logo_updated'));
         }
 
-        const heroBgSetting = settingsData.find((s: any) => s.key === 'hero_bg_url');
+        const heroBgSetting = settingsData.find((s: any) => s.key === 'hero_bg_url' || s.key === 'desktop_hero_bg_url');
         if (heroBgSetting) {
           if (heroBgSetting.value) {
             localStorage.setItem('custom_hero_bg', heroBgSetting.value);
+            localStorage.setItem('custom_desktop_hero_bg', heroBgSetting.value);
           } else {
             localStorage.removeItem('custom_hero_bg');
+            localStorage.removeItem('custom_desktop_hero_bg');
           }
-          window.dispatchEvent(new Event('hero_bg_updated'));
         }
+
+        const mobileHeroBgSetting = settingsData.find((s: any) => s.key === 'mobile_hero_bg_url');
+        if (mobileHeroBgSetting && mobileHeroBgSetting.value) {
+          localStorage.setItem('custom_mobile_hero_bg', mobileHeroBgSetting.value);
+        } else {
+          localStorage.setItem('custom_mobile_hero_bg', '/mobile-hero-bg.png');
+        }
+        window.dispatchEvent(new Event('hero_bg_updated'));
 
         const orderSetting = settingsData.find((s: any) => s.key === 'leadership_order');
         if (orderSetting && orderSetting.value) {
@@ -426,14 +450,11 @@ export class FoundationRepository {
             if (idxA !== -1 && idxB !== -1) return idxA - idxB;
             if (idxA !== -1) return -1;
             if (idxB !== -1) return 1;
-            return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+            return getRolePriority(a.roleEn) - getRolePriority(b.roleEn);
           });
         } else {
-          // Otherwise sort if displayOrder was present
-          const hasOrderData = mapped.some(m => typeof m.displayOrder === 'number' && m.displayOrder > 0);
-          if (hasOrderData) {
-            mapped.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
-          }
+          // Otherwise sort by natural role hierarchy
+          mapped.sort((a, b) => getRolePriority(a.roleEn) - getRolePriority(b.roleEn));
         }
 
         // Re-assign displayOrder sequentially
@@ -499,9 +520,17 @@ export class FoundationRepository {
     if (!supabase) return;
     try {
       // Seed leaders with order
-      const leadersToDb = INITIAL_LEADERSHIP.map((l, idx) => mapLeaderToDb(l, idx));
+      const leadersToDb = INITIAL_LEADERSHIP.map(mapLeaderToDb);
       const { error: lErr } = await supabase.from('office_bearers').upsert(leadersToDb);
       if (lErr) notifySupabaseError(`Seed leaders error: ${lErr.message}`);
+
+      // Seed leadership order setting
+      const leaderIds = INITIAL_LEADERSHIP.map(l => l.id);
+      await supabase.from('foundation_settings').upsert({
+        key: 'leadership_order',
+        value: JSON.stringify(leaderIds),
+        updated_at: new Date().toISOString()
+      });
 
       // Seed drives
       const drivesToDb = INITIAL_DRIVES.map(mapDriveToDb);
@@ -600,7 +629,19 @@ export class FoundationRepository {
     }
     try {
       const list: OfficeBearer[] = JSON.parse(cached);
-      if (Array.isArray(list)) {
+      if (Array.isArray(list) && list.length > 0) {
+        // Detect stale mock leaders that might have been stored in browser cache
+        const hasOldMock = list.some(l => 
+          l.nameEn === 'Pradipta Kumar Das' || 
+          l.nameEn === 'Debendra Nath Mohanty' || 
+          l.nameEn === 'Subhashree Sahoo' || 
+          l.nameEn === 'Dr. B. K. Patnaik' ||
+          l.nameEn === 'Manoranjan Nayak'
+        );
+        if (hasOldMock) {
+          localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(INITIAL_LEADERSHIP));
+          return INITIAL_LEADERSHIP;
+        }
         return list.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
       }
       return INITIAL_LEADERSHIP;
@@ -613,39 +654,48 @@ export class FoundationRepository {
     const leadership = this.getLeadership();
     const index = leadership.findIndex(l => l.id === bearer.id);
     let updated: OfficeBearer[];
+
     if (index >= 0) {
       const existing = leadership[index];
+      const targetOrder = typeof bearer.displayOrder === 'number' ? bearer.displayOrder : (existing.displayOrder ?? index);
       const memberWithOrder: OfficeBearer = {
         ...bearer,
-        displayOrder: typeof bearer.displayOrder === 'number' ? bearer.displayOrder : existing.displayOrder ?? index
+        displayOrder: targetOrder
       };
-      updated = [...leadership];
-      updated[index] = memberWithOrder;
+
+      if (typeof bearer.displayOrder === 'number' && bearer.displayOrder !== index) {
+        const withoutCurrent = leadership.filter(l => l.id !== bearer.id);
+        const targetIdx = Math.max(0, Math.min(bearer.displayOrder, withoutCurrent.length));
+        withoutCurrent.splice(targetIdx, 0, memberWithOrder);
+        updated = withoutCurrent;
+      } else {
+        updated = [...leadership];
+        updated[index] = memberWithOrder;
+      }
     } else {
       const newMember: OfficeBearer = {
         ...bearer,
         displayOrder: typeof bearer.displayOrder === 'number' ? bearer.displayOrder : leadership.length
       };
-      updated = [...leadership, newMember];
+      if (typeof bearer.displayOrder === 'number') {
+        const targetIdx = Math.max(0, Math.min(bearer.displayOrder, leadership.length));
+        updated = [...leadership];
+        updated.splice(targetIdx, 0, newMember);
+      } else {
+        updated = [...leadership, newMember];
+      }
     }
     
-    // Sort and re-index
-    updated.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    // Sort and re-index sequentially
     updated = updated.map((l, idx) => ({ ...l, displayOrder: idx }));
     localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(updated));
 
     if (supabase) {
       try {
-        const payload = mapLeaderToDb(bearer, bearer.displayOrder ?? index);
+        const payload = mapLeaderToDb(bearer);
         const { error } = await supabase.from('office_bearers').upsert(payload);
         if (error) {
-          if (error.message && error.message.includes('display_order')) {
-            const fallbackPayload = { ...payload };
-            delete fallbackPayload.display_order;
-            await supabase.from('office_bearers').upsert(fallbackPayload);
-          } else {
-            notifySupabaseError(`Save office_bearer error: ${error.message}`);
-          }
+          notifySupabaseError(`Save office_bearer error: ${error.message}`);
         } else {
           console.log('Successfully saved office bearer to Supabase:', bearer.nameEn);
         }
@@ -654,7 +704,8 @@ export class FoundationRepository {
         const orderIds = updated.map(l => l.id);
         await supabase.from('foundation_settings').upsert({
           key: 'leadership_order',
-          value: JSON.stringify(orderIds)
+          value: JSON.stringify(orderIds),
+          updated_at: new Date().toISOString()
         });
       } catch (err: any) {
         notifySupabaseError(`Save office_bearer exception: ${err?.message}`);
@@ -674,22 +725,18 @@ export class FoundationRepository {
 
     if (supabase) {
       try {
-        const payload = updated.map((l, idx) => mapLeaderToDb(l, idx));
-        const { error } = await supabase.from('office_bearers').upsert(payload);
-        if (error) {
-          if (error.message && error.message.includes('display_order')) {
-            console.warn('display_order column not in table; fallback to foundation_settings.');
-          } else {
-            notifySupabaseError(`Save leadership order error: ${error.message}`);
-          }
-        }
-
         // Persist explicit order array in foundation_settings so it never resets on refresh
         const orderIds = updated.map(l => l.id);
-        await supabase.from('foundation_settings').upsert({
+        const { error } = await supabase.from('foundation_settings').upsert({
           key: 'leadership_order',
-          value: JSON.stringify(orderIds)
+          value: JSON.stringify(orderIds),
+          updated_at: new Date().toISOString()
         });
+        if (error) {
+          notifySupabaseError(`Save leadership order error: ${error.message}`);
+        } else {
+          console.log('Successfully saved leadership order to Supabase:', orderIds);
+        }
       } catch (err: any) {
         notifySupabaseError(`Save leadership order exception: ${err?.message}`);
       }
@@ -731,7 +778,8 @@ export class FoundationRepository {
         const orderIds = reordered.map(l => l.id);
         await supabase.from('foundation_settings').upsert({
           key: 'leadership_order',
-          value: JSON.stringify(orderIds)
+          value: JSON.stringify(orderIds),
+          updated_at: new Date().toISOString()
         });
       } catch (err: any) {
         notifySupabaseError(`Delete office_bearer exception: ${err?.message}`);
@@ -841,11 +889,11 @@ export class FoundationRepository {
   }
 
   static getDesktopHeroBg(): string | null {
-    return localStorage.getItem('custom_desktop_hero_bg') || localStorage.getItem('custom_hero_bg');
+    return localStorage.getItem('custom_desktop_hero_bg') || localStorage.getItem('custom_hero_bg') || 'https://kvynutrckfdjorwwzhzb.supabase.co/storage/v1/object/public/foundation_images/branding/1786374388193_whmyf.png';
   }
 
   static getMobileHeroBg(): string | null {
-    return localStorage.getItem('custom_mobile_hero_bg');
+    return localStorage.getItem('custom_mobile_hero_bg') || '/mobile-hero-bg.png';
   }
 
   static async saveHeroBg(imageUrl: string): Promise<void> {
